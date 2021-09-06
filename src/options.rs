@@ -1,17 +1,22 @@
 use clap::{AppSettings, Clap};
+use reqwest::Method;
 
-
-#[derive(Clap)]
+#[derive(Clap, Debug)]
 #[clap(setting = AppSettings::ColoredHelp)]
-struct Opts {
+pub struct Opts {
     #[clap(short, long, default_value = "default")]
-    profile: String,
+    pub profile: String,
     #[clap(short = 'X', long, default_value = "GET")]
-    request: String,
+    pub request: Method,
     // -H HEADER:VALUE
     #[clap(short = 'H', long, multiple = true)]
-    header: Vec<String>,
+    pub header: Vec<String>,
     /// A level of verbosity, and can be used multiple times
     #[clap(short, long)]
-    verbose: bool,
+    pub verbose: bool,
+    pub url:String,
+}
+
+pub fn parse_opts() -> Opts {
+    Opts::parse()
 }

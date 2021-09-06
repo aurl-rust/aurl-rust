@@ -1,5 +1,6 @@
 use reqwest::Client;
 use tokio;
+
 use crate::profile::Profile;
 
 mod oauth2;
@@ -8,14 +9,20 @@ mod access_token_cache;
 mod request;
 mod options;
 
+
 #[tokio::main]
-async fn main() {
-    let profile = Profile::new("");
-    let profile = profile::read_profiles(profile).unwrap_or_else(|_| panic!());
-    let config = profile.get("").unwrap();
-    let token = config.grant_type.get_access_token(config, &Client::new()).await;
-    match token {
-        Ok(t) => print!("{:?}", t),
-        Err(e) => panic!("{:?}", e),
-    }
+async fn main() -> Result<(), ()> {
+    let opts = options::parse_opts();
+    print!("{:?}", opts);
+    let profile = Profile::new(&opts.profile.as_str());
+    let profiles = profile::read_profiles().unwrap_or_else(|e| std::panic::panic_any(format!("{:?}", e)));
+    let config = profiles.get(&profile.name).unwrap();
+    let client = Client::new();
+    let dispatcher = request::Dispatcher { client };
+
+    //TODO better handling Err(...)
+    let res = dispatcher.send(&opts, config).await.unwrap();
+    let body = res.text().await.unwrap();
+    println!("{:?}", body);
+    Ok(())
 }

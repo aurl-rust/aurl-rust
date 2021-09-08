@@ -14,7 +14,7 @@ pub struct Opts {
     /// A level of verbosity, and can be used multiple times
     #[clap(short, long)]
     pub verbose: bool,
-    pub url:String,
+    pub url: String,
 }
 
 pub fn parse_opts() -> Opts {

@@ -21,11 +21,13 @@ pub struct OAuth2Config {
 }
 
 impl OAuth2Config {
+    #[allow(dead_code)]
     fn auth_server_auth_endpoint(&self) -> Result<String, AccessTokenError> {
-        ok_or(
-            self.auth_server_auth_endpoint.clone(),
-            "auth_server_auth_endpoint",
-        )
+        // ok_or(
+        //     self.auth_server_auth_endpoint.clone(),
+        //     "auth_server_auth_endpoint",
+        // )
+        todo!("DELETE annotation after implement AzC")
     }
 
     fn auth_server_token_endpoint(&self) -> Result<String, AccessTokenError> {

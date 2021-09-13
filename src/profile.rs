@@ -5,6 +5,7 @@ use tini::Ini;
 
 use crate::oauth2::OAuth2Config;
 
+#[derive(Debug)]
 pub enum InvalidConfig {
     MissingFields(String),
     IniFileError(tini::Error),
@@ -12,7 +13,7 @@ pub enum InvalidConfig {
 }
 
 pub struct Profile {
-    name: String,
+    pub name: String,
 }
 
 impl Profile {
@@ -28,18 +29,12 @@ impl Profile {
 
     pub fn config_file() -> PathBuf {
         let mut file = Profile::basedir();
-        file.push("profile.json");
-        file
-    }
-
-    pub fn token_file(&self) -> PathBuf {
-        let mut file = Profile::basedir();
-        file.push(format!("token/{}.json", self.name));
+        file.push("profiles");
         file
     }
 }
 
-pub fn read_profiles(profile: Profile) -> Result<HashMap<String, OAuth2Config>, InvalidConfig> {
+pub fn read_profiles() -> Result<HashMap<String, OAuth2Config>, InvalidConfig> {
     let config = Ini::from_file(&Profile::config_file()).map_err(|e| InvalidConfig::IniFileError(e))?;
     let mut profiles: HashMap<String, OAuth2Config> = HashMap::new();
 

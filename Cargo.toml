@@ -9,10 +9,12 @@ edition = "2018"
 [dependencies]
 
 reqwest = { version = "0.11.4", features = ["json"] }
-tokio = {version = "1.9.0", features = ["full"]}
+tokio = { version = "1.9.0", features = ["full"] }
 serde = { version = "1.0.117", features = ["derive"] }
 serde_json = "1.0.66"
 async-trait = "0.1.51"
 tini = "1.1"
 dirs = "3.0.2"
 clap = "3.0.0-beta.2"
+log4rs = {version = "1.0.0", features = ["pattern_encoder"]}
+log = "0.4.14"

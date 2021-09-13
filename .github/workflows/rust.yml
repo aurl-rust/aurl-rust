@@ -16,6 +16,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+    - uses: Swatinem/rust-cache@v1
     - name: install fmt and clippy
       run:  rustup component add rustfmt clippy
     - name: Rust fmt and clippy

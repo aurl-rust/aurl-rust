@@ -18,7 +18,9 @@ pub struct Profile {
 
 impl Profile {
     pub fn new(name: &str) -> Profile {
-        Profile { name: name.to_string() }
+        Profile {
+            name: name.to_string(),
+        }
     }
 
     fn basedir() -> PathBuf {
@@ -35,7 +37,8 @@ impl Profile {
 }
 
 pub fn read_profiles() -> Result<HashMap<String, OAuth2Config>, InvalidConfig> {
-    let config = Ini::from_file(&Profile::config_file()).map_err(|e| InvalidConfig::IniFileError(e))?;
+    let config =
+        Ini::from_file(&Profile::config_file()).map_err(|e| InvalidConfig::IniFileError(e))?;
     let mut profiles: HashMap<String, OAuth2Config> = HashMap::new();
 
     for (name, section) in config.iter() {
@@ -46,7 +49,8 @@ pub fn read_profiles() -> Result<HashMap<String, OAuth2Config>, InvalidConfig> {
             client_secret: section.get("client_secret"),
             username: section.get("username"),
             password: section.get("password"),
-            grant_type: section.get("grant_type")
+            grant_type: section
+                .get("grant_type")
                 .ok_or(InvalidConfig::MissingFields("grant_type".to_string()))?,
             scopes: section.get("scopes"),
         };

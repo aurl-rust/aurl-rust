@@ -17,14 +17,19 @@ pub struct OAuth2Config {
     pub grant_type: GrantType,
 }
 
-
 impl OAuth2Config {
     fn auth_server_auth_endpoint(&self) -> Result<String, AccessTokenError> {
-        ok_or(self.auth_server_auth_endpoint.clone(), "auth_server_auth_endpoint")
+        ok_or(
+            self.auth_server_auth_endpoint.clone(),
+            "auth_server_auth_endpoint",
+        )
     }
 
     fn auth_server_token_endpoint(&self) -> Result<String, AccessTokenError> {
-        ok_or(self.auth_server_token_endpoint.clone(), "auth_server_token_endpoint")
+        ok_or(
+            self.auth_server_token_endpoint.clone(),
+            "auth_server_token_endpoint",
+        )
     }
 
     fn client_id(&self) -> Result<String, AccessTokenError> {
@@ -44,11 +49,9 @@ impl OAuth2Config {
     }
 }
 
-
 fn ok_or<T>(v: Option<T>, fname: &str) -> Result<T, AccessTokenError> {
     v.ok_or(AccessTokenError::InvalidConfig(fname.to_string()))
 }
-
 
 #[derive(Deserialize, Debug, Serialize)]
 pub struct AccessToken {
@@ -59,7 +62,6 @@ pub struct AccessToken {
     scope: Option<String>,
     id_token: Option<String>,
 }
-
 
 #[derive(Debug)]
 pub enum AccessTokenError {
@@ -92,31 +94,33 @@ impl FromStr for GrantType {
     }
 }
 
-
 impl GrantType {
-    pub async fn get_access_token(&self, config: &OAuth2Config, http: &Client) -> Result<AccessToken, AccessTokenError> {
+    pub async fn get_access_token(
+        &self,
+        config: &OAuth2Config,
+        http: &Client,
+    ) -> Result<AccessToken, AccessTokenError> {
         let res = match self {
-            GrantType::Password =>
-                http
-                    .post(config.auth_server_token_endpoint()?)
-                    .basic_auth(config.client_id()?, config.client_secret.clone())
-                    .form(&[
-                        ("grant_type", "password"),
-                        ("scope", &config.scopes()?),
-                        ("username", &config.username()?),
-                        ("password", &config.password()?),
-                    ]),
-            GrantType::ClientCredentials =>
-                http
-                    .post(config.auth_server_token_endpoint()?)
-                    .basic_auth(config.client_id()?, config.client_secret.clone())
-                    .form(&[
-                        ("grant_type", "client_credentials"),
-                        ("scope", &config.scopes()?)
-                    ]),
-            _ => todo!()
-        }.send().await?;
+            GrantType::Password => http
+                .post(config.auth_server_token_endpoint()?)
+                .basic_auth(config.client_id()?, config.client_secret.clone())
+                .form(&[
+                    ("grant_type", "password"),
+                    ("scope", &config.scopes()?),
+                    ("username", &config.username()?),
+                    ("password", &config.password()?),
+                ]),
+            GrantType::ClientCredentials => http
+                .post(config.auth_server_token_endpoint()?)
+                .basic_auth(config.client_id()?, config.client_secret.clone())
+                .form(&[
+                    ("grant_type", "client_credentials"),
+                    ("scope", &config.scopes()?),
+                ]),
+            _ => todo!(),
+        }
+        .send()
+        .await?;
         res.json().await.map_err(|e| AccessTokenError::HttpError(e))
     }
 }
-

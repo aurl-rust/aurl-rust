@@ -11,20 +11,27 @@ pub fn init_logger(verbose: bool) -> Handle {
         (LevelFilter::Info, "{m}{n}")
     };
 
-    let stdout = Box::new(ConsoleAppender::builder()
-        .encoder(Box::new(PatternEncoder::new(pattern)))
-        .build());
-    let requests = Box::new(ConsoleAppender::builder()
-        .encoder(Box::new(PatternEncoder::new(pattern)))
-        .build());
+    let stdout = Box::new(
+        ConsoleAppender::builder()
+            .encoder(Box::new(PatternEncoder::new(pattern)))
+            .build(),
+    );
+    let requests = Box::new(
+        ConsoleAppender::builder()
+            .encoder(Box::new(PatternEncoder::new(pattern)))
+            .build(),
+    );
     let config = Config::builder()
         .appender(Appender::builder().build("stdout", stdout))
         .appender(Appender::builder().build("requests", requests))
-        .logger(Logger::builder()
-            .appender("requests")
-            .additive(false)
-            .build("requests", level))
-        .build(Root::builder().appender("stdout").build(level)).unwrap();
+        .logger(
+            Logger::builder()
+                .appender("requests")
+                .additive(false)
+                .build("requests", level),
+        )
+        .build(Root::builder().appender("stdout").build(level))
+        .unwrap();
 
     log4rs::init_config(config).unwrap()
 }

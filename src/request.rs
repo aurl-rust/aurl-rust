@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
 
-use reqwest::{Client, Response, StatusCode};
 use reqwest::header::HeaderMap;
+use reqwest::{Client, Response, StatusCode};
 
 use crate::oauth2::{AccessTokenError, OAuth2Config};
 use crate::options::Opts;
@@ -32,18 +32,23 @@ impl Dispatcher {
                 }
             }
         }
-        let headers: HeaderMap = (&hm).try_into().map_err(|e| RequestError::InvalidHeaderError(format!("{:?}", e)))?;
+        let headers: HeaderMap = (&hm)
+            .try_into()
+            .map_err(|e| RequestError::InvalidHeaderError(format!("{:?}", e)))?;
 
         loop {
-            let token = oauth2.grant_type
+            let token = oauth2
+                .grant_type
                 .get_access_token(&oauth2, &self.client)
                 .await
                 .map_err(|e| RequestError::OAuthError(e))?;
-            let res = self.client
+            let res = self
+                .client
                 .request(opts.request.clone(), opts.url.clone())
                 .bearer_auth(token.access_token)
                 .headers(headers.clone())
-                .send().await;
+                .send()
+                .await;
             match res {
                 Ok(ok) => return Ok(ok),
                 Err(e) if e.status().map_or(false, |s| s == StatusCode::UNAUTHORIZED) => (),
@@ -52,4 +57,3 @@ impl Dispatcher {
         }
     }
 }
-

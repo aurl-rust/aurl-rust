@@ -15,6 +15,9 @@ pub struct OAuth2Config {
     pub username: Option<String>,
     pub password: Option<String>,
     pub grant_type: GrantType,
+    pub redirect: Option<String>,
+    pub default_content_type: Option<String>,
+    pub default_user_agent: Option<String>,
 }
 
 impl OAuth2Config {
@@ -50,7 +53,7 @@ impl OAuth2Config {
 }
 
 fn ok_or<T>(v: Option<T>, fname: &str) -> Result<T, AccessTokenError> {
-    v.ok_or(AccessTokenError::InvalidConfig(fname.to_string()))
+    v.ok_or_else(|| AccessTokenError::InvalidConfig(fname.to_string()))
 }
 
 #[derive(Deserialize, Debug, Serialize)]
@@ -121,6 +124,6 @@ impl GrantType {
         }
         .send()
         .await?;
-        res.json().await.map_err(|e| AccessTokenError::HttpError(e))
+        res.json().await.map_err(AccessTokenError::HttpError)
     }
 }

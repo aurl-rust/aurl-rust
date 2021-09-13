@@ -32,12 +32,6 @@ impl Profile {
         file.push("profiles");
         file
     }
-
-    pub fn token_file(&self) -> PathBuf {
-        let mut file = Profile::basedir();
-        file.push(format!("token/{}.json", self.name));
-        file
-    }
 }
 
 pub fn read_profiles() -> Result<HashMap<String, OAuth2Config>, InvalidConfig> {

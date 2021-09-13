@@ -1,12 +1,11 @@
 use std::collections::HashMap;
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryInto;
 
-use reqwest::{Client, ClientBuilder, Method, RequestBuilder, Response, StatusCode};
-use reqwest::header::{HeaderMap, HeaderValue, IntoHeaderName};
+use reqwest::{Client, Response, StatusCode};
+use reqwest::header::HeaderMap;
 
-use crate::oauth2::{AccessToken, AccessTokenError, OAuth2Config};
+use crate::oauth2::{AccessTokenError, OAuth2Config};
 use crate::options::Opts;
-use crate::profile::Profile;
 
 #[derive(Debug)]
 pub enum RequestError {

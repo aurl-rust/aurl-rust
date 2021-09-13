@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
 
-use log::debug;
+use log::{debug, error};
 use reqwest::header::{HeaderMap, CONTENT_TYPE, USER_AGENT};
+use reqwest::redirect::Policy;
 use reqwest::{Client, Response, StatusCode};
 
 use crate::oauth2::{AccessTokenError, OAuth2Config};
@@ -14,6 +15,27 @@ pub enum RequestError {
     OAuth(AccessTokenError),
     Http(reqwest::Error),
     InvalidHeader(String),
+}
+
+pub fn same_origin_redirect_policy() -> Policy {
+    //allow redirect to same origin
+    Policy::custom(|attempt| {
+        if let Some(prev) = attempt.previous().get(0) {
+            debug!("Redirect to {:?}", attempt.url().origin());
+            debug!("Original request Host = {:?}", prev.origin());
+            if attempt.previous().len() > 5 {
+                error!("Exceed redirect limit(5)");
+                attempt.stop()
+            } else if prev.origin() != attempt.url().origin() {
+                error!("Redirect to non-same origin resource server");
+                attempt.stop()
+            } else {
+                attempt.follow()
+            }
+        } else {
+            attempt.stop()
+        }
+    })
 }
 
 pub struct Dispatcher {

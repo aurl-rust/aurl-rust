@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use webbrowser;
 
 use crate::oauth2::GrantType::{AuthorizationCode, ClientCredentials, Password};
 use crate::profile::InvalidConfig;
@@ -138,10 +139,43 @@ impl GrantType {
                     ("grant_type", "client_credentials"),
                     ("scope", &config.scopes()?),
                 ]),
+            GrantType::AuthorizationCode => {
+                // Create Authorizaoin Request
+                let req = http
+                    .post(config.auth_server_token_endpoint()?)
+                    .basic_auth(config.client_id()?, config.client_secret.clone())
+                    .header(
+                        USER_AGENT,
+                        config
+                            .default_user_agent
+                            .clone()
+                            .unwrap_or_else(version::name),
+                    )
+                    .form(&[
+                        ("grant_type", "code"),
+                        ("scope", &config.scopes()?),
+                        ("state", random().as_str()),
+                    ]);
+
+                // Open webbrowser with Request
+                let url = req.build().unwrap();
+                let url = url.url().as_str();
+                webbrowser::open(url).unwrap();
+
+                // Input Authorization Code
+
+                // Finally Exchange AccessToken from Authorization Code Request
+                todo!()
+            }
             _ => todo!(),
         }
         .send()
         .await?;
         res.json().await.map_err(AccessTokenError::HttpError)
     }
+}
+
+// Generate Random State String
+fn random() -> String {
+    todo!()
 }

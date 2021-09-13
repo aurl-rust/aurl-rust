@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::oauth2::GrantType::{AuthorizationCode, ClientCredentials, Password};
 use crate::profile::InvalidConfig;
+use crate::version;
+use reqwest::header::USER_AGENT;
 
 pub struct OAuth2Config {
     pub auth_server_auth_endpoint: Option<String>,
@@ -109,6 +111,13 @@ impl GrantType {
             GrantType::Password => http
                 .post(config.auth_server_token_endpoint()?)
                 .basic_auth(config.client_id()?, config.client_secret.clone())
+                .header(
+                    USER_AGENT,
+                    config
+                        .default_user_agent
+                        .clone()
+                        .unwrap_or_else(version::name),
+                )
                 .form(&[
                     ("grant_type", "password"),
                     ("scope", &config.scopes()?),
@@ -118,6 +127,13 @@ impl GrantType {
             GrantType::ClientCredentials => http
                 .post(config.auth_server_token_endpoint()?)
                 .basic_auth(config.client_id()?, config.client_secret.clone())
+                .header(
+                    USER_AGENT,
+                    config
+                        .default_user_agent
+                        .clone()
+                        .unwrap_or_else(version::name),
+                )
                 .form(&[
                     ("grant_type", "client_credentials"),
                     ("scope", &config.scopes()?),

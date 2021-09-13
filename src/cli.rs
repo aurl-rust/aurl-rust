@@ -1,10 +1,11 @@
 use log::{debug, info};
-use options::Opts;
 use reqwest::Client;
+
+use options::Opts;
 
 use crate::options;
 use crate::profile::{read_profiles, InvalidConfig as InvalidConfigError, Profile};
-use crate::request::{Dispatcher, RequestError};
+use crate::request::{same_origin_redirect_policy, Dispatcher, RequestError};
 
 pub enum AppError {
     ProfileNotFound(String),
@@ -20,7 +21,10 @@ pub async fn execute(opts: Opts) -> Result<(), AppError> {
     let config = profiles
         .get(&profile.name)
         .ok_or(AppError::ProfileNotFound(profile.name))?;
-    let client = Client::new();
+    let client = Client::builder()
+        .redirect(same_origin_redirect_policy())
+        .build()
+        .unwrap();
     let dispatcher = Dispatcher { client };
 
     let res = dispatcher

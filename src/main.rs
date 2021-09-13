@@ -5,12 +5,12 @@ use tokio;
 
 use crate::cli::AppError;
 
+mod cli;
+mod logger;
 mod oauth2;
+mod options;
 mod profile;
 mod request;
-mod options;
-mod logger;
-mod cli;
 
 #[tokio::main]
 async fn main() {

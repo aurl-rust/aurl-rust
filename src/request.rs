@@ -1,17 +1,19 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
 
-use reqwest::header::HeaderMap;
+use log::debug;
+use reqwest::header::{HeaderMap, CONTENT_TYPE, USER_AGENT};
 use reqwest::{Client, Response, StatusCode};
 
 use crate::oauth2::{AccessTokenError, OAuth2Config};
 use crate::options::Opts;
+use crate::version;
 
 #[derive(Debug)]
 pub enum RequestError {
-    OAuthError(AccessTokenError),
-    HttpError(reqwest::Error),
-    InvalidHeaderError(String),
+    OAuth(AccessTokenError),
+    Http(reqwest::Error),
+    InvalidHeader(String),
 }
 
 pub struct Dispatcher {
@@ -24,35 +26,52 @@ impl Dispatcher {
         for h in opts.header.clone() {
             let kv = h.split(',').collect::<Vec<_>>();
             if kv.len() == 2 {
-                match (kv.get(0), kv.get(1)) {
-                    (Some(k), Some(v)) => {
-                        hm.insert((*k).to_string(), (*v).to_string());
-                    }
-                    _ => (),
+                if let (Some(k), Some(v)) = (kv.get(0), kv.get(1)) {
+                    hm.insert((*k).to_string(), (*v).to_string());
                 }
             }
         }
+        //set user agent
+        if !hm.contains_key(USER_AGENT.as_str()) {
+            hm.insert(
+                USER_AGENT.to_string(),
+                oauth2
+                    .default_user_agent
+                    .clone()
+                    .unwrap_or_else(version::name),
+            );
+        }
+
+        // set content-type
+        if let (false, Some(c)) = (
+            hm.contains_key(CONTENT_TYPE.as_str()),
+            oauth2.default_content_type.clone(),
+        ) {
+            hm.insert(CONTENT_TYPE.to_string(), c);
+        }
+
         let headers: HeaderMap = (&hm)
             .try_into()
-            .map_err(|e| RequestError::InvalidHeaderError(format!("{:?}", e)))?;
+            .map_err(|e| RequestError::InvalidHeader(format!("{:?}", e)))?;
 
         loop {
             let token = oauth2
                 .grant_type
-                .get_access_token(&oauth2, &self.client)
+                .get_access_token(oauth2, &self.client)
                 .await
-                .map_err(|e| RequestError::OAuthError(e))?;
-            let res = self
+                .map_err(RequestError::OAuth)?;
+            let req = self
                 .client
                 .request(opts.request.clone(), opts.url.clone())
                 .bearer_auth(token.access_token)
-                .headers(headers.clone())
-                .send()
-                .await;
+                .headers(headers.clone());
+            debug!("{:?}", req);
+            let res = req.send().await;
+            debug!("{:?}", res);
             match res {
                 Ok(ok) => return Ok(ok),
                 Err(e) if e.status().map_or(false, |s| s == StatusCode::UNAUTHORIZED) => (),
-                Err(e) => return Err(RequestError::HttpError(e)),
+                Err(e) => return Err(RequestError::Http(e)),
             }
         }
     }

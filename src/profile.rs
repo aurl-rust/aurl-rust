@@ -37,8 +37,7 @@ impl Profile {
 }
 
 pub fn read_profiles() -> Result<HashMap<String, OAuth2Config>, InvalidConfig> {
-    let config =
-        Ini::from_file(&Profile::config_file()).map_err(|e| InvalidConfig::IniFileError(e))?;
+    let config = Ini::from_file(&Profile::config_file()).map_err(InvalidConfig::IniFileError)?;
     let mut profiles: HashMap<String, OAuth2Config> = HashMap::new();
 
     for (name, section) in config.iter() {
@@ -51,8 +50,11 @@ pub fn read_profiles() -> Result<HashMap<String, OAuth2Config>, InvalidConfig> {
             password: section.get("password"),
             grant_type: section
                 .get("grant_type")
-                .ok_or(InvalidConfig::MissingFields("grant_type".to_string()))?,
+                .ok_or_else(|| InvalidConfig::MissingFields("grant_type".to_string()))?,
             scopes: section.get("scopes"),
+            redirect: section.get("redirect"),
+            default_content_type: section.get("default_content_type"),
+            default_user_agent: section.get("default_user_agent"),
         };
         profiles.insert(name.to_string(), profile);
     }

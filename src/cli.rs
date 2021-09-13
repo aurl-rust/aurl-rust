@@ -14,9 +14,9 @@ pub enum AppError {
 
 pub async fn execute(opts: Opts) -> Result<(), AppError> {
     debug!("{:?}", opts);
-    let profile = Profile::new(&opts.profile.as_str());
+    let profile = Profile::new(opts.profile.as_str());
 
-    let profiles = read_profiles().map_err(|e| AppError::InvalidConfig(e))?;
+    let profiles = read_profiles().map_err(AppError::InvalidConfig)?;
     let config = profiles
         .get(&profile.name)
         .ok_or(AppError::ProfileNotFound(profile.name))?;
@@ -26,11 +26,11 @@ pub async fn execute(opts: Opts) -> Result<(), AppError> {
     let res = dispatcher
         .send(&opts, config)
         .await
-        .map_err(|e| AppError::RequestError(e))?;
+        .map_err(AppError::RequestError)?;
     let body = res
         .text()
         .await
-        .map_err(|e| AppError::RequestError(RequestError::HttpError(e)))?;
+        .map_err(|e| AppError::RequestError(RequestError::Http(e)))?;
     info!("{:}", body);
     Ok(())
 }

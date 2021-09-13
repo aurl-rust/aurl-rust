@@ -1,7 +1,6 @@
 use std::process::abort;
 
 use log::error;
-use tokio;
 
 use crate::cli::AppError;
 
@@ -11,6 +10,7 @@ mod oauth2;
 mod options;
 mod profile;
 mod request;
+mod version;
 
 #[tokio::main]
 async fn main() {

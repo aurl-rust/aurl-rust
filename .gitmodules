@@ -1,0 +1,3 @@
+[submodule "httpbin"]
+	path = httpbin
+	url = git@github.com:postmanlabs/httpbin.git

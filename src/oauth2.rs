@@ -180,7 +180,12 @@ impl GrantType {
                             .clone()
                             .unwrap_or_else(version::name),
                     )
-                    .form(&["code", auth_code.as_str()])
+                    .form(&[
+                        "code",
+                        auth_code.as_str(),
+                        "grant_type",
+                        "authorization_code",
+                    ])
             }
             _ => todo!(),
         }

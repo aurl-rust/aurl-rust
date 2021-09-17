@@ -200,5 +200,5 @@ fn random() -> String {
     let val: i32 = rng.gen();
 
     // TODO: なんかアレなのでどうにかする
-    base64::encode(&val.to_be_bytes()).clone()
+    base64::encode(&val.to_be_bytes())
 }

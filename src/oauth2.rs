@@ -1,6 +1,7 @@
 use std::io;
 use std::str::FromStr;
 
+use rand::Rng;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use webbrowser;
@@ -197,5 +198,9 @@ impl GrantType {
 
 // Generate Random State String
 fn random() -> String {
-    todo!()
+    let mut rng = rand::thread_rng();
+    let val: i32 = rng.gen();
+
+    // TODO: なんかアレなのでどうにかする
+    base64::encode(&val.to_be_bytes()).clone()
 }

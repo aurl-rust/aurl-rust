@@ -4,7 +4,6 @@ use std::str::FromStr;
 use rand::Rng;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use webbrowser;
 
 use crate::oauth2::GrantType::{AuthorizationCode, ClientCredentials, Password};
 use crate::profile::InvalidConfig;

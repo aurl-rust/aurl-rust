@@ -1,3 +1,4 @@
+use std::io;
 use std::str::FromStr;
 
 use reqwest::Client;
@@ -140,9 +141,9 @@ impl GrantType {
                     ("scope", &config.scopes()?),
                 ]),
             GrantType::AuthorizationCode => {
-                // Create Authorizaoin Request
+                // 1. 認可リクエストのURLを作成
                 let req = http
-                    .post(config.auth_server_token_endpoint()?)
+                    .get(config.auth_server_auth_endpoint()?)
                     .basic_auth(config.client_id()?, config.client_secret.clone())
                     .header(
                         USER_AGENT,
@@ -151,21 +152,35 @@ impl GrantType {
                             .clone()
                             .unwrap_or_else(version::name),
                     )
-                    .form(&[
+                    .query(&[
                         ("grant_type", "code"),
                         ("scope", &config.scopes()?),
                         ("state", random().as_str()),
+                        ("redirect_uri", "http://localhost:8080/callback"), // TODO: ここどうしよう
                     ]);
 
-                // Open webbrowser with Request
+                // 2. 認可リクエストのURLをブラウザで開く
                 let url = req.build().unwrap();
                 let url = url.url().as_str();
                 webbrowser::open(url).unwrap();
 
-                // Input Authorization Code
+                // 3. Dummy URL で停止するので URL から認可コードを取得して入力
+                let mut auth_code = String::new();
+                io::stdin()
+                    .read_line(&mut auth_code)
+                    .expect("input authorization code");
 
-                // Finally Exchange AccessToken from Authorization Code Request
-                todo!()
+                // 4. 認可コードをトークンエンドポイントへ POST. AccessToken を取得
+                http.post(config.auth_server_token_endpoint()?)
+                    .basic_auth(config.client_id()?, config.client_secret.clone())
+                    .header(
+                        USER_AGENT,
+                        config
+                            .default_user_agent
+                            .clone()
+                            .unwrap_or_else(version::name),
+                    )
+                    .form(&["code", auth_code.as_str()])
             }
             _ => todo!(),
         }

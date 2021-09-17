@@ -187,7 +187,6 @@ impl GrantType {
                         "authorization_code",
                     ])
             }
-            _ => todo!(),
         }
         .send()
         .await?;

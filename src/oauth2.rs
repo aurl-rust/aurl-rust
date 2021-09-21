@@ -1,7 +1,7 @@
 use std::io;
 use std::str::FromStr;
 
-use log::{debug, info};
+use log::info;
 use rand::Rng;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};

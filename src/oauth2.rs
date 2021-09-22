@@ -158,7 +158,7 @@ impl GrantType {
                         ("client_id", &config.client_id()?),
                         ("scope", &config.scopes()?),
                         ("state", random().as_str()),
-                        ("redirect_uri", "http://localhost:8080/callback"), // TODO: ここどうしよう
+                        ("redirect_uri", "http://localhost:8080/callback"), // ここは自分のブラウザで見れないとダメなので固定
                     ]);
 
                 // 2. 認可リクエストのURLをブラウザで開く
@@ -189,7 +189,13 @@ impl GrantType {
                     .form(&[
                         ("code", auth_code.trim()),
                         ("grant_type", "authorization_code"),
-                        ("redirect_uri", "http://localhost:8080/callback"),
+                        (
+                            "redirect_uri",
+                            config
+                                .redirect
+                                .as_ref()
+                                .unwrap(),
+                        ),
                     ])
             }
         }

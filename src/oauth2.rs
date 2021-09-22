@@ -32,7 +32,6 @@ impl OAuth2Config {
             self.auth_server_auth_endpoint.clone(),
             "auth_server_auth_endpoint",
         )
-        // todo!("DELETE annotation after implement AzC")
     }
 
     fn auth_server_token_endpoint(&self) -> Result<String, AccessTokenError> {
@@ -189,13 +188,7 @@ impl GrantType {
                     .form(&[
                         ("code", auth_code.trim()),
                         ("grant_type", "authorization_code"),
-                        (
-                            "redirect_uri",
-                            config
-                                .redirect
-                                .as_ref()
-                                .unwrap(),
-                        ),
+                        ("redirect_uri", config.redirect.as_ref().unwrap()),
                     ])
             }
         }

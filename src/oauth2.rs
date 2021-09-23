@@ -1,7 +1,7 @@
 use std::io;
 use std::str::FromStr;
 
-use log::info;
+use log::{info, warn};
 use rand::Rng;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -10,6 +10,7 @@ use crate::oauth2::GrantType::{AuthorizationCode, ClientCredentials, Password};
 use crate::profile::InvalidConfig;
 use crate::version;
 use reqwest::header::USER_AGENT;
+use std::io::Write;
 
 pub struct OAuth2Config {
     pub auth_server_auth_endpoint: Option<String>,
@@ -55,6 +56,10 @@ impl OAuth2Config {
 
     fn scopes(&self) -> Result<String, AccessTokenError> {
         ok_or(self.scopes.clone(), "scopes")
+    }
+
+    fn redirect(&self) -> Result<String, AccessTokenError> {
+        ok_or(self.redirect.clone(), "redirect")
     }
 }
 
@@ -142,38 +147,33 @@ impl GrantType {
                 ]),
             GrantType::AuthorizationCode => {
                 // 1. 認可リクエストのURLを作成
-                let req = http
-                    .get(config.auth_server_auth_endpoint()?)
-                    .basic_auth(config.client_id()?, config.client_secret.clone())
-                    .header(
-                        USER_AGENT,
-                        config
-                            .default_user_agent
-                            .clone()
-                            .unwrap_or_else(version::name),
-                    )
-                    .query(&[
-                        ("response_type", "code"),
-                        ("client_id", &config.client_id()?),
-                        ("scope", &config.scopes()?),
-                        ("state", random().as_str()),
-                        ("redirect_uri", "http://localhost:8080/callback"), // ここは自分のブラウザで見れないとダメなので固定
-                    ]);
+                let req = http.get(config.auth_server_auth_endpoint()?).query(&[
+                    ("response_type", "code"),
+                    ("client_id", &config.client_id()?),
+                    ("scope", &config.scopes()?),
+                    ("state", random().as_str()),
+                    ("redirect_uri", config.redirect()?.as_str()),
+                ]);
 
                 // 2. 認可リクエストのURLをブラウザで開く
-                let url = req.build().unwrap();
-                let url = url.url().as_str();
+                let req = req.build().unwrap();
+                let url = req.url().as_str();
                 info!("{:?}", url);
 
                 webbrowser::open(url).unwrap();
 
                 // 3. Dummy URL で停止するので URL から認可コードを取得して入力
                 let mut auth_code = String::new();
-                println!("Input auth_code");
-                io::stdin()
-                    .read_line(&mut auth_code)
-                    .expect("input authorization code");
 
+                loop {
+                    print!("\nEnter authorization code:");
+                    io::stdout().flush().unwrap();
+                    match io::stdin().read_line(&mut auth_code) {
+                        Ok(size) if size > 1 => break,
+                        Err(e) => warn!("{:?}", e),
+                        _ => (),
+                    }
+                }
                 // 4. 認可コードをトークンエンドポイントへ POST. AccessToken を取得
                 http.post(config.auth_server_token_endpoint()?)
                     .basic_auth(config.client_id()?, config.client_secret.clone())
@@ -188,7 +188,7 @@ impl GrantType {
                     .form(&[
                         ("code", auth_code.trim()),
                         ("grant_type", "authorization_code"),
-                        ("redirect_uri", config.redirect.as_ref().unwrap()),
+                        ("redirect_uri", config.redirect()?.as_str()),
                     ])
             }
         }

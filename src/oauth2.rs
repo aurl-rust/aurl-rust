@@ -1,5 +1,8 @@
+use std::io;
 use std::str::FromStr;
 
+use log::info;
+use rand::Rng;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
@@ -25,11 +28,10 @@ pub struct OAuth2Config {
 impl OAuth2Config {
     #[allow(dead_code)]
     fn auth_server_auth_endpoint(&self) -> Result<String, AccessTokenError> {
-        // ok_or(
-        //     self.auth_server_auth_endpoint.clone(),
-        //     "auth_server_auth_endpoint",
-        // )
-        todo!("DELETE annotation after implement AzC")
+        ok_or(
+            self.auth_server_auth_endpoint.clone(),
+            "auth_server_auth_endpoint",
+        )
     }
 
     fn auth_server_token_endpoint(&self) -> Result<String, AccessTokenError> {
@@ -138,10 +140,69 @@ impl GrantType {
                     ("grant_type", "client_credentials"),
                     ("scope", &config.scopes()?),
                 ]),
-            _ => todo!(),
+            GrantType::AuthorizationCode => {
+                // 1. 認可リクエストのURLを作成
+                let req = http
+                    .get(config.auth_server_auth_endpoint()?)
+                    .basic_auth(config.client_id()?, config.client_secret.clone())
+                    .header(
+                        USER_AGENT,
+                        config
+                            .default_user_agent
+                            .clone()
+                            .unwrap_or_else(version::name),
+                    )
+                    .query(&[
+                        ("response_type", "code"),
+                        ("client_id", &config.client_id()?),
+                        ("scope", &config.scopes()?),
+                        ("state", random().as_str()),
+                        ("redirect_uri", "http://localhost:8080/callback"), // ここは自分のブラウザで見れないとダメなので固定
+                    ]);
+
+                // 2. 認可リクエストのURLをブラウザで開く
+                let url = req.build().unwrap();
+                let url = url.url().as_str();
+                info!("{:?}", url);
+
+                webbrowser::open(url).unwrap();
+
+                // 3. Dummy URL で停止するので URL から認可コードを取得して入力
+                let mut auth_code = String::new();
+                println!("Input auth_code");
+                io::stdin()
+                    .read_line(&mut auth_code)
+                    .expect("input authorization code");
+
+                // 4. 認可コードをトークンエンドポイントへ POST. AccessToken を取得
+                http.post(config.auth_server_token_endpoint()?)
+                    .basic_auth(config.client_id()?, config.client_secret.clone())
+                    .header(
+                        USER_AGENT,
+                        config
+                            .default_user_agent
+                            .clone()
+                            .unwrap_or_else(version::name),
+                    )
+                    .header("content-type", "application/x-www-form-urlencoded")
+                    .form(&[
+                        ("code", auth_code.trim()),
+                        ("grant_type", "authorization_code"),
+                        ("redirect_uri", config.redirect.as_ref().unwrap()),
+                    ])
+            }
         }
         .send()
         .await?;
         res.json().await.map_err(AccessTokenError::HttpError)
     }
+}
+
+// Generate Random State String
+fn random() -> String {
+    let mut rng = rand::thread_rng();
+    let val: i32 = rng.gen();
+
+    // TODO: なんかアレなのでどうにかする
+    base64::encode(&val.to_be_bytes())
 }

@@ -1,5 +1,8 @@
+use std::fs::File;
 use std::io;
+use std::path::PathBuf;
 use std::str::FromStr;
+use std::time::SystemTime;
 
 use log::{info, warn};
 use rand::Rng;
@@ -75,6 +78,43 @@ pub struct AccessToken {
     expires_in: u64,
     scope: Option<String>,
     id_token: Option<String>,
+}
+
+impl AccessToken {
+    // Save AccessToken Cache
+    pub fn save_cache(&self, profile: &str) -> AccessToken {
+        // open cache file
+        let path = AccessToken::cache_file(profile);
+        info!("{:?}", path.as_path());
+        let mut cache_file = File::create(path).unwrap();
+
+        todo!()
+    }
+
+    // calculate ttl with expires_in in AccessToken
+    fn calc_ttl(expires_in: u64) -> u64 {
+        // Epoch Sec に expires_in を加えた秒を TTL
+        let now = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap();
+        now.as_secs() + expires_in
+    }
+
+    fn basedir() -> PathBuf {
+        let mut home = dirs::home_dir().unwrap();
+        home.push(".aurl/");
+        home
+    }
+
+    // create Token Cache File path
+    fn cache_file(profile: &str) -> PathBuf {
+        let mut file = AccessToken::basedir();
+        file.push("token");
+        file.push(profile);
+        file.set_extension("json");
+
+        file
+    }
 }
 
 #[derive(Debug)]
@@ -194,7 +234,10 @@ impl GrantType {
         }
         .send()
         .await?;
-        res.json().await.map_err(AccessTokenError::HttpError)
+        res.json()
+            .await
+            // TODO: save cache here
+            .map_err(AccessTokenError::HttpError)
     }
 }
 

@@ -84,9 +84,9 @@ impl AccessToken {
     // Save AccessToken Cache
     pub fn save_cache(&self, profile: &str) -> AccessToken {
         // open cache file
-        let path = AccessToken::cache_file(profile);
-        info!("{:?}", path.as_path());
-        let mut cache_file = File::create(path).unwrap();
+        // let path = AccessToken::cache_file(profile);
+        // info!("{:?}", path.as_path());
+        // let mut cache_file = File::create(path).unwrap();
 
         todo!()
     }

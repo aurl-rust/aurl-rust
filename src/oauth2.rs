@@ -1,4 +1,5 @@
-use std::io;
+use std::fs::File;
+use std::io::{self, BufReader};
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::SystemTime;
@@ -82,7 +83,17 @@ pub struct AccessToken {
 impl AccessToken {
     // Load AccessToken from Cache
     pub fn load_cache(profile: &str) -> Option<AccessToken> {
-        None
+        match File::open(AccessToken::cache_file(profile)) {
+            Ok(f) => {
+                let reader = BufReader::new(f);
+                let token: AccessToken = serde_json::from_reader(reader).unwrap(); // TODO: エラーのときは None で返す
+                Some(token)
+            }
+            Err(_) => {
+                info!("can not find cache file: {}", &profile);
+                None
+            }
+        }
     }
 
     // Save AccessToken in Cache
@@ -119,6 +130,24 @@ impl AccessToken {
         file.set_extension("json");
 
         file
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn test_cache_path() {
+        // setup
+        let home = dirs::home_dir().unwrap();
+        let home = home.to_str().unwrap();
+        let expected = PathBuf::from(format!("{}/.aurl/token/test.json", home));
+
+        let actual = AccessToken::cache_file("test");
+
+        assert_eq!(expected, actual);
     }
 }
 

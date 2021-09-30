@@ -6,7 +6,7 @@ use reqwest::header::{HeaderMap, CONTENT_TYPE, USER_AGENT};
 use reqwest::redirect::Policy;
 use reqwest::{Client, Response, StatusCode};
 
-use crate::oauth2::{AccessTokenError, OAuth2Config};
+use crate::oauth2::{AccessToken, AccessTokenError, OAuth2Config};
 use crate::options::Opts;
 use crate::version;
 
@@ -77,11 +77,18 @@ impl Dispatcher {
             .map_err(|e| RequestError::InvalidHeader(format!("{:?}", e)))?;
 
         loop {
-            let token = oauth2
-                .grant_type
-                .get_access_token(oauth2, &self.client)
-                .await
-                .map_err(RequestError::OAuth)?;
+            // test load cache from profile
+            let token = match AccessToken::load_cache("") {
+                Some(t) => t,
+                None => oauth2
+                    .grant_type
+                    .get_access_token(oauth2, &self.client)
+                    .await
+                    .map_err(RequestError::OAuth)?,
+            };
+
+            // save cache with AccessToken
+            token.save_cache("");
             let req = self
                 .client
                 .request(opts.request.clone(), opts.url.clone())

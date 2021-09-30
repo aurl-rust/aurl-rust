@@ -80,7 +80,12 @@ pub struct AccessToken {
 }
 
 impl AccessToken {
-    // Save AccessToken Cache
+    // Load AccessToken from Cache
+    pub fn load_cache(profile: &str) -> Option<AccessToken> {
+        None
+    }
+
+    // Save AccessToken in Cache
     pub fn save_cache(&self, profile: &str) -> AccessToken {
         // open cache file
         // let path = AccessToken::cache_file(profile);
@@ -92,7 +97,8 @@ impl AccessToken {
 
     // calculate ttl with expires_in in AccessToken
     fn calc_ttl(expires_in: u64) -> u64 {
-        // Epoch Sec に expires_in を加えた秒を TTL
+        // http://openid-foundation-japan.github.io/rfc6749.ja.html#token-response
+        // ttl = Epoch Sec + expires_in
         let now = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap();
@@ -233,10 +239,7 @@ impl GrantType {
         }
         .send()
         .await?;
-        res.json()
-            .await
-            // TODO: save cache here
-            .map_err(AccessTokenError::HttpError)
+        res.json().await.map_err(AccessTokenError::HttpError)
     }
 }
 

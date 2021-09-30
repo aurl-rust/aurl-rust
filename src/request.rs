@@ -78,7 +78,7 @@ impl Dispatcher {
 
         loop {
             // test load cache from profile
-            let token = match AccessToken::load_cache("") {
+            let token = match AccessToken::load_cache(&opts.profile) {
                 Some(t) => t,
                 None => oauth2
                     .grant_type
@@ -88,7 +88,7 @@ impl Dispatcher {
             };
 
             // save cache with AccessToken
-            token.save_cache("");
+            token.save_cache(&opts.profile);
             let req = self
                 .client
                 .request(opts.request.clone(), opts.url.clone())

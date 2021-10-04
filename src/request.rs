@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
 
-use log::{debug, error};
+use log::{debug, error, info};
 use reqwest::header::{HeaderMap, CONTENT_TYPE, USER_AGENT};
 use reqwest::redirect::Policy;
 use reqwest::{Client, Response, StatusCode};
@@ -86,6 +86,7 @@ impl Dispatcher {
                     .await
                     .map_err(RequestError::OAuth)?,
             };
+            debug!("Get Token: {:?}", token);
 
             // save cache with AccessToken
             token.save_cache(&opts.profile);

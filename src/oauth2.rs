@@ -97,13 +97,22 @@ impl AccessToken {
     }
 
     // Save AccessToken in Cache
-    pub fn save_cache(&self, profile: &str) -> AccessToken {
+    pub fn save_cache(&self, profile: &str) -> Result<(), AccessTokenError> {
         // open cache file
-        // let path = AccessToken::cache_file(profile);
-        // info!("{:?}", path.as_path());
-        // let mut cache_file = File::create(path).unwrap();
+        let path = AccessToken::cache_file(profile);
+        info!("{:?}", path.as_path());
+        let mut cache_file = File::create(path).unwrap();
 
-        todo!()
+        let str = serde_json::to_string(&self).unwrap();
+        info!("Deserialize AccessToken {:?}", str);
+
+        match cache_file.write_all(str.as_bytes()) {
+            Ok(_) => Ok(()),
+            Err(_) => {
+                warn!("can not write cache file.");
+                Err(AccessTokenError::InvalidCache("invalid cache".to_string()))
+            }
+        }
     }
 
     // calculate ttl with expires_in in AccessToken
@@ -145,14 +154,39 @@ mod test {
         let home = home.to_str().unwrap();
         let expected = PathBuf::from(format!("{}/.aurl/token/test.json", home));
 
+        // execute
         let actual = AccessToken::cache_file("test");
 
+        // verify
         assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_deserialize_json() {
+        // let data = r#"
+        // {
+        //     "access_token": "aaaaaa",
+        //     "token_type": "bearer",
+        //     "expires_in": 3600,
+        //     "scope": "root"
+        // }"#;
+
+        let token = AccessToken {
+            access_token: "aaaaaa".to_string(),
+            token_type: "bearer".to_string(),
+            expires_in: 3600,
+            id_token: None,
+            refresh_token: None,
+            scope: Some("root".to_string()),
+        };
+        let result = token.save_cache("test").unwrap();
+        assert_eq!((), result);
     }
 }
 
 #[derive(Debug)]
 pub enum AccessTokenError {
+    InvalidCache(String),
     InvalidConfig(String),
     HttpError(reqwest::Error),
 }

@@ -1,4 +1,5 @@
-use std::fs::{File, OpenOptions};
+use std::fs;
+use std::fs::File;
 use std::io::{self, BufReader};
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -98,15 +99,13 @@ impl AccessToken {
     }
 
     // Save AccessToken in Cache
-    pub fn save_cache(&mut self, profile: &str) -> Result<(), AccessTokenError> {
+    pub fn save_cache(&mut self, profile: &str) -> Result<(), CacheError> {
+        AccessToken::create_cachedir()?;
+
         // open cache file
         let path = AccessToken::cache_file(profile);
         info!("{:?}", path.as_path());
-        let mut cache_file = OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(path)
-            .unwrap();
+        let mut cache_file = File::create(path).unwrap();
 
         // Calculate TTL
         self.ttl = Some(AccessToken::calc_ttl(self.expires_in));
@@ -115,13 +114,10 @@ impl AccessToken {
         let str = serde_json::to_string(&self).unwrap();
         info!("Deserialize AccessToken {:?}", str);
 
-        match cache_file.write_all(str.as_bytes()) {
-            Ok(_) => Ok(()),
-            Err(_) => {
-                warn!("can not write cache file.");
-                Err(AccessTokenError::InvalidCache("invalid cache".to_string()))
-            }
-        }
+        cache_file.write_all(str.as_bytes()).map_err(|_| {
+            warn!("can not write cache file.");
+            CacheError::InvalidCache("invalid cache".to_string())
+        })
     }
 
     // calculate ttl with expires_in in AccessToken
@@ -142,13 +138,36 @@ impl AccessToken {
 
     // create Token Cache File path
     fn cache_file(profile: &str) -> PathBuf {
-        let mut file = AccessToken::basedir();
-        file.push("token");
+        let mut file = AccessToken::cachedir();
         file.push(profile);
         file.set_extension("json");
 
         file
     }
+
+    fn cachedir() -> PathBuf {
+        let mut dir = AccessToken::basedir();
+        dir.push("token");
+        dir
+    }
+
+    fn create_cachedir() -> Result<(), CacheError> {
+        let dirpath = AccessToken::cachedir();
+        if !dirpath.exists() && fs::create_dir_all(dirpath).is_err() {
+            warn!("can not cache file");
+            Err(CacheError::FailedCreateCacheError(
+                "can't create cache dir".to_string(),
+            ))
+        } else {
+            Ok(())
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum CacheError {
+    InvalidCache(String),
+    FailedCreateCacheError(String),
 }
 
 #[cfg(test)]
@@ -198,7 +217,6 @@ mod test {
 
 #[derive(Debug)]
 pub enum AccessTokenError {
-    InvalidCache(String),
     InvalidConfig(String),
     HttpError(reqwest::Error),
 }

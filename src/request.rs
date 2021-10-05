@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
 
-use log::{debug, error, info};
+use log::{debug, error, warn};
 use reqwest::header::{HeaderMap, CONTENT_TYPE, USER_AGENT};
 use reqwest::redirect::Policy;
 use reqwest::{Client, Response, StatusCode};
@@ -78,7 +78,7 @@ impl Dispatcher {
 
         loop {
             // test load cache from profile
-            let token = match AccessToken::load_cache(&opts.profile) {
+            let mut token = match AccessToken::load_cache(&opts.profile) {
                 Some(t) => t,
                 None => oauth2
                     .grant_type
@@ -89,7 +89,9 @@ impl Dispatcher {
             debug!("Get Token: {:?}", token);
 
             // save cache with AccessToken
-            token.save_cache(&opts.profile);
+            token
+                .save_cache(&opts.profile)
+                .unwrap_or_else(|err| warn!("can not save cache. {:?}", err));
             let req = self
                 .client
                 .request(opts.request.clone(), opts.url.clone())

@@ -1,4 +1,4 @@
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::{self, BufReader};
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -78,6 +78,7 @@ pub struct AccessToken {
     expires_in: u64,
     scope: Option<String>,
     id_token: Option<String>,
+    ttl: Option<u64>,
 }
 
 impl AccessToken {
@@ -97,12 +98,20 @@ impl AccessToken {
     }
 
     // Save AccessToken in Cache
-    pub fn save_cache(&self, profile: &str) -> Result<(), AccessTokenError> {
+    pub fn save_cache(&mut self, profile: &str) -> Result<(), AccessTokenError> {
         // open cache file
         let path = AccessToken::cache_file(profile);
         info!("{:?}", path.as_path());
-        let mut cache_file = File::create(path).unwrap();
+        let mut cache_file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(path)
+            .unwrap();
 
+        // Calculate TTL
+        self.ttl = Some(AccessToken::calc_ttl(self.expires_in));
+
+        // save json string
         let str = serde_json::to_string(&self).unwrap();
         info!("Deserialize AccessToken {:?}", str);
 
@@ -127,7 +136,7 @@ impl AccessToken {
 
     fn basedir() -> PathBuf {
         let mut home = dirs::home_dir().unwrap();
-        home.push(".aurl/");
+        home.push(".aurl");
         home
     }
 
@@ -157,6 +166,8 @@ mod test {
         // execute
         let actual = AccessToken::cache_file("test");
 
+        println!("{:?}", actual);
+
         // verify
         assert_eq!(expected, actual);
     }
@@ -171,13 +182,14 @@ mod test {
         //     "scope": "root"
         // }"#;
 
-        let token = AccessToken {
+        let mut token = AccessToken {
             access_token: "aaaaaa".to_string(),
             token_type: "bearer".to_string(),
             expires_in: 3600,
             id_token: None,
             refresh_token: None,
             scope: Some("root".to_string()),
+            ttl: None,
         };
         let result = token.save_cache("test").unwrap();
         assert_eq!((), result);

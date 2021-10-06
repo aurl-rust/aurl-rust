@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::SystemTime;
 
-use log::{info, warn};
+use log::{debug, info, warn};
 use rand::Rng;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -88,8 +88,19 @@ impl AccessToken {
         match File::open(AccessToken::cache_file(profile)) {
             Ok(f) => {
                 let reader = BufReader::new(f);
-                let token: AccessToken = serde_json::from_reader(reader).unwrap(); // TODO: エラーのときは None で返す
-                Some(token)
+
+                let now = SystemTime::now()
+                    .duration_since(SystemTime::UNIX_EPOCH)
+                    .unwrap();
+
+                match serde_json::from_reader::<BufReader<File>, AccessToken>(reader) {
+                    // ttl 取得失敗したら 0 とする
+                    Ok(t) if t.ttl.unwrap_or_else(|| u64::MIN) > now.as_secs() => {
+                        debug!("cache is valid. use cache!");
+                        Some(t)
+                    }
+                    _ => None,
+                }
             }
             Err(_) => {
                 info!("can not find cache file: {}", &profile);
@@ -112,7 +123,7 @@ impl AccessToken {
 
         // save json string
         let str = serde_json::to_string(&self).unwrap();
-        info!("Deserialize AccessToken {:?}", str);
+        debug!("Deserialize AccessToken {:?}", str);
 
         cache_file.write_all(str.as_bytes()).map_err(|_| {
             warn!("can not write cache file.");

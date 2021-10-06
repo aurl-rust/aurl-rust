@@ -95,7 +95,7 @@ impl AccessToken {
 
                 match serde_json::from_reader::<BufReader<File>, AccessToken>(reader) {
                     // ttl 取得失敗したら 0 とする
-                    Ok(t) if t.ttl.unwrap_or_else(|| u64::MIN) > now.as_secs() => {
+                    Ok(t) if t.ttl.unwrap_or(u64::MIN) > now.as_secs() => {
                         debug!("cache is valid. use cache!");
                         Some(t)
                     }

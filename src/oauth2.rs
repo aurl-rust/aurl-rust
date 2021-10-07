@@ -118,9 +118,10 @@ impl AccessToken {
         info!("{:?}", path.as_path());
         let mut cache_file = File::create(path).unwrap();
 
-        // Calculate TTL
-        self.ttl = Some(AccessToken::calc_ttl(self.expires_in));
-
+        // Calculate TTL, if ttl is None
+        if self.ttl.is_none() {
+            self.ttl = Some(AccessToken::calc_ttl(self.expires_in));
+        }
         // save json string
         let str = serde_json::to_string(&self).unwrap();
         debug!("Deserialize AccessToken {:?}", str);

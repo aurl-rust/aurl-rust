@@ -102,7 +102,9 @@ impl Dispatcher {
             debug!("{:?}", res);
             match res {
                 Ok(ok) => return Ok(ok),
-                Err(e) if e.status().map_or(false, |s| s == StatusCode::UNAUTHORIZED) => (),
+                Err(e) if e.status().map_or(false, |s| s == StatusCode::UNAUTHORIZED) => {
+                    AccessToken::remove_cache(&opts.profile)
+                }
                 Err(e) => return Err(RequestError::Http(e)),
             }
         }

@@ -132,6 +132,13 @@ impl AccessToken {
         })
     }
 
+    // Remove cache file
+    pub fn remove_cache(profile: &str) {
+        fs::remove_file(AccessToken::cache_file(profile).as_path()).unwrap_or_else(|_| {
+            info!("can not remove cache");
+        })
+    }
+
     // calculate ttl with expires_in in AccessToken
     fn calc_ttl(expires_in: u64) -> u64 {
         // http://openid-foundation-japan.github.io/rfc6749.ja.html#token-response
@@ -185,6 +192,8 @@ pub enum CacheError {
 #[cfg(test)]
 mod test {
 
+    use std::{thread, time::Duration};
+
     use super::*;
 
     #[test]
@@ -204,7 +213,7 @@ mod test {
     }
 
     #[test]
-    fn test_deserialize_json() {
+    fn test_save_cache() {
         // let data = r#"
         // {
         //     "access_token": "aaaaaa",
@@ -224,6 +233,56 @@ mod test {
         };
         let result = token.save_cache("test").unwrap();
         assert_eq!((), result);
+    }
+
+    #[test]
+    fn test_get_valid_cache() {
+        // setup
+        let mut token = AccessToken {
+            access_token: "aaaaaa".to_string(),
+            token_type: "bearer".to_string(),
+            expires_in: 3600,
+            id_token: None,
+            refresh_token: None,
+            scope: Some("root".to_string()),
+            ttl: None,
+        };
+        token.save_cache("test_get_valid_cache").unwrap();
+        thread::sleep(Duration::from_secs(2));
+
+        // exercise
+        let cache = AccessToken::load_cache("test_get_valid_cache");
+
+        // verify
+        assert_eq!(true, cache.is_some());
+
+        // clean
+        AccessToken::remove_cache("test_get_valid_cache")
+    }
+
+    #[test]
+    fn test_get_expired_cache() {
+        // setup
+        let mut token = AccessToken {
+            access_token: "aaaaaa".to_string(),
+            token_type: "bearer".to_string(),
+            expires_in: 1, // 有効時間 1 秒
+            id_token: None,
+            refresh_token: None,
+            scope: Some("root".to_string()),
+            ttl: None,
+        };
+        token.save_cache("test_get_valid_cache").unwrap();
+        thread::sleep(Duration::from_secs(2));
+
+        // exercise
+        let cache = AccessToken::load_cache("test_get_valid_cache");
+
+        // verify
+        assert_eq!(true, cache.is_none());
+
+        // clean
+        AccessToken::remove_cache("test_get_valid_cache")
     }
 }
 

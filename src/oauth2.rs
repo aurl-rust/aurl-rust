@@ -272,17 +272,17 @@ mod test {
             scope: Some("root".to_string()),
             ttl: None,
         };
-        token.save_cache("test_get_valid_cache").unwrap();
-        thread::sleep(Duration::from_secs(2));
+        token.save_cache("test_get_expired_cache").unwrap();
+        thread::sleep(Duration::from_secs(5));
 
         // exercise
-        let cache = AccessToken::load_cache("test_get_valid_cache");
+        let cache = AccessToken::load_cache("test_get_expired_cache");
 
         // verify
         assert_eq!(true, cache.is_none());
 
         // clean
-        AccessToken::remove_cache("test_get_valid_cache")
+        AccessToken::remove_cache("test_get_expired_cache")
     }
 }
 

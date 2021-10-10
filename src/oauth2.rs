@@ -10,6 +10,7 @@ use crate::oauth2::GrantType::{AuthorizationCode, ClientCredentials, Password};
 use crate::profile::InvalidConfig;
 use crate::version;
 use reqwest::header::USER_AGENT;
+use sha2::{Digest, Sha256};
 use std::io::Write;
 
 pub struct OAuth2Config {
@@ -147,12 +148,17 @@ impl GrantType {
                 ]),
             GrantType::AuthorizationCode => {
                 // 1. 認可リクエストのURLを作成
+                let verifier = random();
+                let (method, challenge) = GrantType::pkce_challenge(PkceMethod::S256, &verifier);
+
                 let req = http.get(config.auth_server_auth_endpoint()?).query(&[
                     ("response_type", "code"),
                     ("client_id", &config.client_id()?),
                     ("scope", &config.scopes()?),
                     ("state", random().as_str()),
                     ("redirect_uri", config.redirect()?.as_str()),
+                    ("code_challenge", &challenge),
+                    ("code_challenge_method", method.to_str()),
                 ]);
 
                 // 2. 認可リクエストのURLをブラウザで開く
@@ -189,12 +195,44 @@ impl GrantType {
                         ("code", auth_code.trim()),
                         ("grant_type", "authorization_code"),
                         ("redirect_uri", config.redirect()?.as_str()),
+                        ("code_verifier", &verifier),
                     ])
             }
         }
         .send()
         .await?;
         res.json().await.map_err(AccessTokenError::HttpError)
+    }
+
+    fn pkce_challenge(method: PkceMethod, verifier: &str) -> (PkceMethod, String) {
+        match method {
+            PkceMethod::S256 => {
+                // verifier を to_ascii -> Sha256 -> Base64urlEncode
+                let mut hasher = Sha256::new();
+                hasher.update(verifier.to_ascii_lowercase().as_bytes());
+                let result = hasher.finalize();
+                let result = format!("{:X}", result);
+
+                // base64 encode して返す
+                (
+                    method,
+                    base64::encode_mode(result.as_bytes(), base64::Base64Mode::UrlSafe),
+                )
+            }
+        }
+    }
+}
+
+// PKCE Method
+enum PkceMethod {
+    S256,
+}
+
+impl PkceMethod {
+    fn to_str(&self) -> &'static str {
+        match self {
+            PkceMethod::S256 => "S256",
+        }
     }
 }
 

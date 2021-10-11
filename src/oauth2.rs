@@ -1,6 +1,8 @@
 use std::io;
 use std::str::FromStr;
 
+use crypto::digest::Digest;
+use crypto::sha2::Sha256;
 use log::{info, warn};
 use rand::Rng;
 use reqwest::Client;
@@ -10,7 +12,6 @@ use crate::oauth2::GrantType::{AuthorizationCode, ClientCredentials, Password};
 use crate::profile::InvalidConfig;
 use crate::version;
 use reqwest::header::USER_AGENT;
-use sha2::{Digest, Sha256};
 use std::io::Write;
 
 pub struct OAuth2Config {
@@ -149,7 +150,7 @@ impl GrantType {
             GrantType::AuthorizationCode => {
                 // 1. 認可リクエストのURLを作成
                 let verifier = random();
-                let (method, challenge) = GrantType::pkce_challenge(PkceMethod::S256, &verifier);
+                let (challenge, method) = GrantType::pkce_challenge(PkceMethod::S256, &verifier);
 
                 let req = http.get(config.auth_server_auth_endpoint()?).query(&[
                     ("response_type", "code"),
@@ -204,19 +205,18 @@ impl GrantType {
         res.json().await.map_err(AccessTokenError::HttpError)
     }
 
-    fn pkce_challenge(method: PkceMethod, verifier: &str) -> (PkceMethod, String) {
+    fn pkce_challenge(method: PkceMethod, verifier: &str) -> (String, PkceMethod) {
         match method {
             PkceMethod::S256 => {
                 // verifier を to_ascii -> Sha256 -> Base64urlEncode
                 let mut hasher = Sha256::new();
-                hasher.update(verifier.to_ascii_lowercase().as_bytes());
-                let result = hasher.finalize();
-                let result = format!("{:X}", result);
+                hasher.input_str(verifier);
+                let result = hasher.result_str();
 
                 // base64 encode して返す
                 (
+                    base64_url::encode(result.as_bytes()),
                     method,
-                    base64::encode_mode(result.as_bytes(), base64::Base64Mode::UrlSafe),
                 )
             }
         }
@@ -224,6 +224,8 @@ impl GrantType {
 }
 
 // PKCE Method
+
+#[derive(PartialEq, Debug)]
 enum PkceMethod {
     S256,
 }
@@ -233,6 +235,21 @@ impl PkceMethod {
         match self {
             PkceMethod::S256 => "S256",
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn generate_pkce_challenge() {
+        // https://datatracker.ietf.org/doc/html/rfc7636#appendix-B
+        let (c, m) = GrantType::pkce_challenge(PkceMethod::S256, "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk");
+
+        assert_eq!(m, PkceMethod::S256);
+        assert_eq!(c, "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM");
     }
 }
 

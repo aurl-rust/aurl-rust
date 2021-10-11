@@ -1,12 +1,11 @@
 use std::io;
 use std::str::FromStr;
 
-use crypto::digest::Digest;
-use crypto::sha2::Sha256;
 use log::{info, warn};
 use rand::Rng;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 use crate::oauth2::GrantType::{AuthorizationCode, ClientCredentials, Password};
 use crate::profile::InvalidConfig;
@@ -209,13 +208,11 @@ impl GrantType {
         match method {
             PkceMethod::S256 => {
                 // verifier を to_ascii -> Sha256 -> Base64urlEncode
-                let mut hasher = Sha256::new();
-                hasher.input_str(verifier);
-                let result = hasher.result_str();
-
+                let digest = Sha256::digest(verifier.as_bytes());
+               
                 // base64 encode して返す
                 (
-                    base64_url::encode(result.as_bytes()),
+                    base64_url::encode(&digest),
                     method,
                 )
             }

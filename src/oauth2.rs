@@ -9,6 +9,7 @@ use log::{debug, info, warn};
 use rand::Rng;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 use crate::oauth2::GrantType::{AuthorizationCode, ClientCredentials, Password};
 use crate::profile::InvalidConfig;
@@ -356,12 +357,17 @@ impl GrantType {
                 ]),
             GrantType::AuthorizationCode => {
                 // 1. 認可リクエストのURLを作成
+                let verifier = random();
+                let (challenge, method) = GrantType::pkce_challenge(PkceMethod::S256, &verifier);
+
                 let req = http.get(config.auth_server_auth_endpoint()?).query(&[
                     ("response_type", "code"),
                     ("client_id", &config.client_id()?),
                     ("scope", &config.scopes()?),
                     ("state", random().as_str()),
                     ("redirect_uri", config.redirect()?.as_str()),
+                    ("code_challenge", &challenge),
+                    ("code_challenge_method", method.to_str()),
                 ]);
 
                 // 2. 認可リクエストのURLをブラウザで開く
@@ -398,12 +404,74 @@ impl GrantType {
                         ("code", auth_code.trim()),
                         ("grant_type", "authorization_code"),
                         ("redirect_uri", config.redirect()?.as_str()),
+                        ("code_verifier", &verifier),
                     ])
             }
         }
         .send()
         .await?;
         res.json().await.map_err(AccessTokenError::HttpError)
+    }
+
+    fn pkce_challenge(method: PkceMethod, verifier: &str) -> (String, PkceMethod) {
+        // https://datatracker.ietf.org/doc/html/rfc7636#section-4.1
+        assert!(verifier.len() > 42 && verifier.len() <= 128);
+
+        match method {
+            PkceMethod::S256 => {
+                // verifier を to_ascii -> Sha256 -> Base64urlEncode
+                let digest = Sha256::digest(verifier.as_bytes());
+
+                // base64 encode して返す
+                (base64_url::encode(&digest), method)
+            }
+        }
+    }
+}
+
+// PKCE Method
+
+#[derive(PartialEq, Debug)]
+enum PkceMethod {
+    S256,
+}
+
+impl PkceMethod {
+    fn to_str(&self) -> &'static str {
+        match self {
+            PkceMethod::S256 => "S256",
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn generate_pkce_challenge() {
+        // https://datatracker.ietf.org/doc/html/rfc7636#appendix-B
+        let (c, m) = GrantType::pkce_challenge(
+            PkceMethod::S256,
+            "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+        );
+
+        assert_eq!(m, PkceMethod::S256);
+        assert_eq!(c, "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM");
+    }
+
+    #[test]
+    #[should_panic]
+    fn short_verifier_ng() {
+        GrantType::pkce_challenge(PkceMethod::S256, "aaa");
+    }
+
+    #[test]
+    #[should_panic]
+    fn long_verifier_ng() {
+        GrantType::pkce_challenge(PkceMethod::S256,
+            "129aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     }
 }
 

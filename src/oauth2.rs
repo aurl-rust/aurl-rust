@@ -1,7 +1,11 @@
-use std::io;
+use std::fs;
+use std::fs::File;
+use std::io::{self, BufReader};
+use std::path::PathBuf;
 use std::str::FromStr;
+use std::time::SystemTime;
 
-use log::{info, warn};
+use log::{debug, info, warn};
 use rand::Rng;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -75,6 +79,211 @@ pub struct AccessToken {
     expires_in: u64,
     scope: Option<String>,
     id_token: Option<String>,
+    ttl: Option<u64>,
+}
+
+impl AccessToken {
+    // Load AccessToken from Cache
+    pub fn load_cache(profile: &str) -> Option<AccessToken> {
+        match File::open(AccessToken::cache_file(profile)) {
+            Ok(f) => {
+                let reader = BufReader::new(f);
+
+                let now = SystemTime::now()
+                    .duration_since(SystemTime::UNIX_EPOCH)
+                    .unwrap();
+
+                match serde_json::from_reader::<BufReader<File>, AccessToken>(reader) {
+                    // ttl 取得失敗したら 0 とする
+                    Ok(t) if t.ttl.unwrap_or(u64::MIN) > now.as_secs() => {
+                        debug!("cache is valid. use cache!");
+                        Some(t)
+                    }
+                    _ => None,
+                }
+            }
+            Err(_) => {
+                info!("can not find cache file: {}", &profile);
+                None
+            }
+        }
+    }
+
+    // Save AccessToken in Cache
+    pub fn save_cache(&mut self, profile: &str) -> Result<(), CacheError> {
+        AccessToken::create_cachedir()?;
+
+        // open cache file
+        let path = AccessToken::cache_file(profile);
+        info!("{:?}", path.as_path());
+        let mut cache_file = File::create(path).unwrap();
+
+        // Calculate TTL, if ttl is None
+        if self.ttl.is_none() {
+            self.ttl = Some(AccessToken::calc_ttl(self.expires_in));
+        }
+        // save json string
+        let str = serde_json::to_string(&self).unwrap();
+        debug!("Deserialize AccessToken {:?}", str);
+
+        cache_file.write_all(str.as_bytes()).map_err(|_| {
+            warn!("can not write cache file.");
+            CacheError::InvalidCache("invalid cache".to_string())
+        })
+    }
+
+    // Remove cache file
+    pub fn remove_cache(profile: &str) {
+        fs::remove_file(AccessToken::cache_file(profile).as_path()).unwrap_or_else(|_| {
+            info!("can not remove cache");
+        })
+    }
+
+    // calculate ttl with expires_in in AccessToken
+    fn calc_ttl(expires_in: u64) -> u64 {
+        // http://openid-foundation-japan.github.io/rfc6749.ja.html#token-response
+        // ttl = Epoch Sec + expires_in
+        let now = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap();
+        now.as_secs() + expires_in
+    }
+
+    fn basedir() -> PathBuf {
+        let mut home = dirs::home_dir().unwrap();
+        home.push(".aurl");
+        home
+    }
+
+    // create Token Cache File path
+    fn cache_file(profile: &str) -> PathBuf {
+        let mut file = AccessToken::cachedir();
+        file.push(profile);
+        file.set_extension("json");
+
+        file
+    }
+
+    fn cachedir() -> PathBuf {
+        let mut dir = AccessToken::basedir();
+        dir.push("token");
+        dir
+    }
+
+    fn create_cachedir() -> Result<(), CacheError> {
+        let dirpath = AccessToken::cachedir();
+        if !dirpath.exists() && fs::create_dir_all(dirpath).is_err() {
+            warn!("can not cache file");
+            Err(CacheError::FailedCreateCacheError(
+                "can't create cache dir".to_string(),
+            ))
+        } else {
+            Ok(())
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum CacheError {
+    InvalidCache(String),
+    FailedCreateCacheError(String),
+}
+
+#[cfg(test)]
+mod test {
+
+    use std::{thread, time::Duration};
+
+    use super::*;
+
+    #[test]
+    fn test_cache_path() {
+        // setup
+        let home = dirs::home_dir().unwrap();
+        let home = home.to_str().unwrap();
+        let expected = PathBuf::from(format!("{}/.aurl/token/test.json", home));
+
+        // execute
+        let actual = AccessToken::cache_file("test");
+
+        println!("{:?}", actual);
+
+        // verify
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_save_cache() {
+        // let data = r#"
+        // {
+        //     "access_token": "aaaaaa",
+        //     "token_type": "bearer",
+        //     "expires_in": 3600,
+        //     "scope": "root"
+        // }"#;
+
+        let mut token = AccessToken {
+            access_token: "aaaaaa".to_string(),
+            token_type: "bearer".to_string(),
+            expires_in: 3600,
+            id_token: None,
+            refresh_token: None,
+            scope: Some("root".to_string()),
+            ttl: None,
+        };
+        let result = token.save_cache("test").unwrap();
+        assert_eq!((), result);
+    }
+
+    #[test]
+    fn test_get_valid_cache() {
+        // setup
+        let mut token = AccessToken {
+            access_token: "aaaaaa".to_string(),
+            token_type: "bearer".to_string(),
+            expires_in: 3600,
+            id_token: None,
+            refresh_token: None,
+            scope: Some("root".to_string()),
+            ttl: None,
+        };
+        token.save_cache("test_get_valid_cache").unwrap();
+        thread::sleep(Duration::from_secs(2));
+
+        // exercise
+        let cache = AccessToken::load_cache("test_get_valid_cache");
+
+        // verify
+        assert_eq!(true, cache.is_some());
+
+        // clean
+        AccessToken::remove_cache("test_get_valid_cache")
+    }
+
+    #[test]
+    fn test_get_expired_cache() {
+        // setup
+        let mut token = AccessToken {
+            access_token: "aaaaaa".to_string(),
+            token_type: "bearer".to_string(),
+            expires_in: 1, // 有効時間 1 秒
+            id_token: None,
+            refresh_token: None,
+            scope: Some("root".to_string()),
+            ttl: None,
+        };
+        token.save_cache("test_get_expired_cache").unwrap();
+        thread::sleep(Duration::from_secs(5));
+
+        // exercise
+        let cache = AccessToken::load_cache("test_get_expired_cache");
+
+        // verify
+        assert_eq!(true, cache.is_none());
+
+        // clean
+        AccessToken::remove_cache("test_get_expired_cache")
+    }
 }
 
 #[derive(Debug)]

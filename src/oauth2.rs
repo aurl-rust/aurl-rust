@@ -285,6 +285,31 @@ mod test {
         // clean
         AccessToken::remove_cache("test_get_expired_cache")
     }
+
+    #[test]
+    fn generate_pkce_challenge() {
+        // https://datatracker.ietf.org/doc/html/rfc7636#appendix-B
+        let (c, m) = GrantType::pkce_challenge(
+            PkceMethod::S256,
+            "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+        );
+
+        assert_eq!(m, PkceMethod::S256);
+        assert_eq!(c, "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM");
+    }
+
+    #[test]
+    #[should_panic]
+    fn short_verifier_ng() {
+        GrantType::pkce_challenge(PkceMethod::S256, "aaa");
+    }
+
+    #[test]
+    #[should_panic]
+    fn long_verifier_ng() {
+        GrantType::pkce_challenge(PkceMethod::S256,
+            "129aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    }
 }
 
 #[derive(Debug)]
@@ -441,37 +466,6 @@ impl PkceMethod {
         match self {
             PkceMethod::S256 => "S256",
         }
-    }
-}
-
-#[cfg(test)]
-mod test {
-
-    use super::*;
-
-    #[test]
-    fn generate_pkce_challenge() {
-        // https://datatracker.ietf.org/doc/html/rfc7636#appendix-B
-        let (c, m) = GrantType::pkce_challenge(
-            PkceMethod::S256,
-            "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
-        );
-
-        assert_eq!(m, PkceMethod::S256);
-        assert_eq!(c, "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM");
-    }
-
-    #[test]
-    #[should_panic]
-    fn short_verifier_ng() {
-        GrantType::pkce_challenge(PkceMethod::S256, "aaa");
-    }
-
-    #[test]
-    #[should_panic]
-    fn long_verifier_ng() {
-        GrantType::pkce_challenge(PkceMethod::S256,
-            "129aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     }
 }
 

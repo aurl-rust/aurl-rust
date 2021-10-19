@@ -1,3 +1,4 @@
+use rand::distributions::Alphanumeric;
 use std::fs;
 use std::fs::File;
 use std::io::{self, BufReader};
@@ -382,7 +383,7 @@ impl GrantType {
                 ]),
             GrantType::AuthorizationCode => {
                 // 1. 認可リクエストのURLを作成
-                let verifier = random();
+                let verifier = PkceMethod::generate_verifier(64);
                 let (challenge, method) = GrantType::pkce_challenge(PkceMethod::S256, &verifier);
 
                 let req = http.get(config.auth_server_auth_endpoint()?).query(&[
@@ -466,6 +467,15 @@ impl PkceMethod {
         match self {
             PkceMethod::S256 => "S256",
         }
+    }
+
+    fn generate_verifier(len: usize) -> String {
+        let s: String = rand::thread_rng()
+            .sample_iter(Alphanumeric)
+            .take(len)
+            .map(char::from)
+            .collect();
+        s
     }
 }
 

@@ -19,7 +19,7 @@ serde_json = "1.0.66"
 async-trait = "0.1.51"
 tini = "1.1"
 dirs = "3.0.2"
-clap = "3.0.0-beta.2"
+clap = "3.0.0-beta.5"
 log4rs = {version = "1.0.0", features = ["pattern_encoder"]}
 log = "0.4.14"
 rand = "0.8.4"

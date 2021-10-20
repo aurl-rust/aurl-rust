@@ -27,6 +27,8 @@ jobs:
     - uses: actions-rs/toolchain@v1
       with:
         profile: minimal
+        target: ${{ matrix.target }}
+        override: true
     - uses: Swatinem/rust-cache@v1
     - name: install fmt and clippy
       run:  rustup component add rustfmt clippy
@@ -39,11 +41,11 @@ jobs:
     - name: Package for macOS(x86_64)
       if: matrix.target == 'x86_64-apple-darwin'
       run: |
-        zip --junk-paths rc-${{ matrix.target }} target/${{ matrix.target }}/release/rc
+        zip --junk-paths aurl-rust-${{ matrix.target }} target/${{ matrix.target }}/release/aurl-rust
     - uses: actions/upload-artifact@v2
       with:
         name: build-${{ matrix.target }}
-        path: rc-${{ matrix.target }}.zip
+        path: aurl-rust-${{ matrix.target }}.zip
 
   create-release:
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
@@ -92,7 +94,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.upload-url.outputs.url }}
-          asset_path: ./build-${{ matrix.target }}/rc-${{ matrix.target }}.zip
-          asset_name: rc-${{ matrix.target }}.zip
+          asset_path: ./build-${{ matrix.target }}/aurl-rust-${{ matrix.target }}.zip
+          asset_name: aurl-rust-${{ matrix.target }}.zip
           asset_content_type: application/zip
 

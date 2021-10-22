@@ -15,7 +15,7 @@ pub struct Opts {
     /// A level of verbosity, and can be used multiple times
     #[clap(short, long)]
     pub verbose: bool,
-    #[clap(long, default_value="")]
+    #[clap(long, default_value = "")]
     pub auth_header_template: String,
     pub url: String,
 }

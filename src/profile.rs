@@ -55,6 +55,7 @@ pub fn read_profiles() -> Result<HashMap<String, OAuth2Config>, InvalidConfig> {
             redirect: section.get("redirect"),
             default_content_type: section.get("default_content_type"),
             default_user_agent: section.get("default_user_agent"),
+            default_auth_header_template: section.get("default_auth_header_template"),
         };
         profiles.insert(name.to_string(), profile);
     }

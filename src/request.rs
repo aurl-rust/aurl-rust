@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
+use std::str::FromStr;
 
 use log::{debug, error, warn};
 use reqwest::header::{HeaderMap, CONTENT_TYPE, USER_AGENT};
@@ -95,8 +96,26 @@ impl Dispatcher {
             let req = self
                 .client
                 .request(opts.request.clone(), opts.url.clone())
-                .bearer_auth(token.access_token)
                 .headers(headers.clone());
+
+            let auth_custom_header = oauth2
+                .default_auth_header_template
+                .clone()
+                .unwrap_or_else(|| "".to_string());
+            let req = if !auth_custom_header.is_empty() {
+                debug!(
+                    "custom header option. use custom header: {}",
+                    auth_custom_header
+                );
+                req.header(
+                    reqwest::header::HeaderName::from_str(&auth_custom_header).unwrap(),
+                    reqwest::header::HeaderValue::from_str(&token.access_token.clone()).unwrap(),
+                )
+            } else {
+                debug!("non option. use bearer");
+                req.bearer_auth(token.access_token)
+            };
+
             debug!("{:?}", req);
             let res = req.send().await;
             debug!("{:?}", res);

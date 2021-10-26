@@ -107,9 +107,11 @@ impl Dispatcher {
                     "custom header option. use custom header: {}",
                     auth_custom_header
                 );
+                let (header, value) =
+                    split_custom_header(&auth_custom_header, &token.access_token).unwrap();
                 req.header(
-                    reqwest::header::HeaderName::from_str(&auth_custom_header).unwrap(),
-                    reqwest::header::HeaderValue::from_str(&token.access_token.clone()).unwrap(),
+                    reqwest::header::HeaderName::from_str(header).unwrap(),
+                    reqwest::header::HeaderValue::from_str(&value).unwrap(),
                 )
             } else {
                 debug!("non option. use bearer");
@@ -127,5 +129,28 @@ impl Dispatcher {
                 Err(e) => return Err(RequestError::Http(e)),
             }
         }
+    }
+}
+
+fn split_custom_header<'a>(
+    template: &'a str,
+    access_token: &'a str,
+) -> Result<(&'a str, String), AccessTokenError> {
+    let split: Vec<&str> = template.split('=').collect();
+    if split.len() != 2 {
+        debug!("Failed parse custom_header_template, {}", template);
+        Err(AccessTokenError::InvalidConfig(
+            "invalid custom_header_template".to_string(),
+        ))
+    } else if !split[1].to_lowercase().contains("$token") {
+        Err(AccessTokenError::InvalidConfig(
+            "can't find '$token' placeholder".to_string(),
+        ))
+    } else {
+        let value = split[1]
+            .trim()
+            .to_lowercase()
+            .replace("$token", access_token);
+        Ok((split[0], value))
     }
 }

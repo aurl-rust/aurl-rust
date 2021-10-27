@@ -107,11 +107,12 @@ impl Dispatcher {
                     "custom header option. use custom header: {}",
                     auth_custom_header
                 );
-                let (header, value) =
-                    split_custom_header(&auth_custom_header, &token.access_token).unwrap();
+                let (header, value) = split_custom_header(&auth_custom_header, &token.access_token)
+                    .expect("Invalid custom header configuration");
                 req.header(
-                    reqwest::header::HeaderName::from_str(header).unwrap(),
-                    reqwest::header::HeaderValue::from_str(&value).unwrap(),
+                    reqwest::header::HeaderName::from_str(header).expect("Failed set header"),
+                    reqwest::header::HeaderValue::from_str(&value)
+                        .expect("Failed set header value"),
                 )
             } else {
                 debug!("non option. use bearer");

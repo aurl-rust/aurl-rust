@@ -1,8 +1,8 @@
-use clap::{AppSettings, Clap};
+use clap::{AppSettings, Clap, crate_version};
 use reqwest::Method;
 
 #[derive(Clap, Debug)]
-#[clap(setting = AppSettings::ColoredHelp)]
+#[clap(setting = AppSettings::ColoredHelp, version = crate_version!())]
 pub struct Opts {
     #[clap(short, long, default_value = "default")]
     pub profile: String,

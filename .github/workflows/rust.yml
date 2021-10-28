@@ -30,18 +30,22 @@ jobs:
         target: ${{ matrix.target }}
         override: true
     - uses: Swatinem/rust-cache@v1
-    - name: install fmt and clippy
-      run:  rustup component add rustfmt clippy
+    - name: install cargo subcommands
+      run:  rustup component add rustfmt clippy cargo-about
     - name: Rust fmt and clippy
       run: cargo fmt && cargo clippy -- -D warnings
     - name: Run tests
       run: cargo test --verbose
     - name: Build release version
       run: cargo build --verbose --release --target=${{ matrix.target }}
+    - name: generate aurl-rust-about.html
+      run: cargo about generate about.hbs > aurl-rust-about.html
     - name: Package for macOS(x86_64)
       if: matrix.target == 'x86_64-apple-darwin'
       run: |
-        zip --junk-paths aurl-rust-${{ matrix.target }} target/${{ matrix.target }}/release/aurl-rust
+        zip --junk-paths aurl-rust-${{ matrix.target }} \
+        target/${{ matrix.target }}/release/aurl-rust \
+        aurl-rust-about.html
     - uses: actions/upload-artifact@v2
       with:
         name: build-${{ matrix.target }}

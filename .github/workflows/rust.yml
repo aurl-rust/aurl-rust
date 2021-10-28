@@ -28,7 +28,7 @@ jobs:
         override: true
     - uses: Swatinem/rust-cache@v1
     - name: install cargo subcommands
-      run:  rustup component add rustfmt clippy cargo-about
+      run:  rustup component add rustfmt clippy  && cargo install cargo-about
     - name: Rust fmt and clippy
       run: cargo fmt && cargo clippy -- -D warnings
     - name: Run tests

@@ -30,6 +30,7 @@ pub struct OAuth2Config {
     pub redirect: Option<String>,
     pub default_content_type: Option<String>,
     pub default_user_agent: Option<String>,
+    pub default_auth_header_template: Option<String>,
 }
 
 impl OAuth2Config {

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
+use std::str::FromStr;
 
 use log::{debug, error, warn};
 use reqwest::header::{HeaderMap, CONTENT_TYPE, USER_AGENT};
@@ -95,8 +96,29 @@ impl Dispatcher {
             let req = self
                 .client
                 .request(opts.request.clone(), opts.url.clone())
-                .bearer_auth(token.access_token)
                 .headers(headers.clone());
+
+            let auth_custom_header = oauth2
+                .default_auth_header_template
+                .clone()
+                .unwrap_or_else(|| "".to_string());
+            let req = if !auth_custom_header.is_empty() {
+                debug!(
+                    "custom header option. use custom header: {}",
+                    auth_custom_header
+                );
+                let (header, value) = split_custom_header(&auth_custom_header, &token.access_token)
+                    .expect("Invalid custom header configuration");
+                req.header(
+                    reqwest::header::HeaderName::from_str(header).expect("Failed set header"),
+                    reqwest::header::HeaderValue::from_str(&value)
+                        .expect("Failed set header value"),
+                )
+            } else {
+                debug!("non option. use bearer");
+                req.bearer_auth(token.access_token)
+            };
+
             debug!("{:?}", req);
             let res = req.send().await;
             debug!("{:?}", res);
@@ -108,5 +130,28 @@ impl Dispatcher {
                 Err(e) => return Err(RequestError::Http(e)),
             }
         }
+    }
+}
+
+fn split_custom_header<'a>(
+    template: &'a str,
+    access_token: &'a str,
+) -> Result<(&'a str, String), AccessTokenError> {
+    let split: Vec<&str> = template.split('=').collect();
+    if split.len() != 2 {
+        debug!("Failed parse custom_header_template, {}", template);
+        Err(AccessTokenError::InvalidConfig(
+            "invalid custom_header_template".to_string(),
+        ))
+    } else if !split[1].to_lowercase().contains("$token") {
+        Err(AccessTokenError::InvalidConfig(
+            "can't find '$token' placeholder".to_string(),
+        ))
+    } else {
+        let value = split[1]
+            .trim()
+            .to_lowercase()
+            .replace("$token", access_token);
+        Ok((split[0], value))
     }
 }

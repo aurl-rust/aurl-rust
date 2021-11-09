@@ -1,4 +1,3 @@
-
 use clap::{AppSettings, Parser};
 use reqwest::Method;
 

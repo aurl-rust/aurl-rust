@@ -1,3 +1,4 @@
+use crate::output::Type;
 use clap::{AppSettings, Parser};
 use reqwest::Method;
 
@@ -16,6 +17,8 @@ pub struct Opts {
     pub verbose: bool,
     #[clap(long, default_value = "")]
     pub auth_header_template: String,
+    #[clap(long)]
+    pub output: Type,
     pub url: String,
 }
 

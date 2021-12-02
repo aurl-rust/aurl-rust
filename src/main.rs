@@ -8,6 +8,7 @@ mod cli;
 mod logger;
 mod oauth2;
 mod options;
+mod output;
 mod profile;
 mod request;
 mod version;

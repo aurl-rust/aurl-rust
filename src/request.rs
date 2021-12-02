@@ -120,6 +120,8 @@ impl Dispatcher {
             };
 
             debug!("{:?}", req);
+            // output 指定があったら send 実行せずに return
+
             let res = req.send().await;
             debug!("{:?}", res);
             match res {

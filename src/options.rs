@@ -17,6 +17,7 @@ pub struct Opts {
     pub verbose: bool,
     #[clap(long, default_value = "")]
     pub auth_header_template: String,
+    /// Output Option (case insensitive). curl: Output curl command snippet. none: Call URL with Got AccessToken.
     #[clap(long, default_value = "none")]
     pub output: Type,
     pub url: String,

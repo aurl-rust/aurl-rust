@@ -5,10 +5,11 @@ use std::str::FromStr;
 use log::{debug, error, warn};
 use reqwest::header::{HeaderMap, CONTENT_TYPE, USER_AGENT};
 use reqwest::redirect::Policy;
-use reqwest::{Client, Response, StatusCode};
+use reqwest::{Client, Response as ReqwestResult, StatusCode};
 
 use crate::oauth2::{AccessToken, AccessTokenError, OAuth2Config};
 use crate::options::Opts;
+use crate::output::{Curl, Output, Type};
 use crate::version;
 
 #[derive(Debug)]
@@ -121,17 +122,37 @@ impl Dispatcher {
 
             debug!("{:?}", req);
             // output 指定があったら send 実行せずに return
-
-            let res = req.send().await;
-            debug!("{:?}", res);
-            match res {
-                Ok(ok) => return Ok(ok),
-                Err(e) if e.status().map_or(false, |s| s == StatusCode::UNAUTHORIZED) => {
-                    AccessToken::remove_cache(&opts.profile)
+            match &opts.output {
+                Type::Curl => {
+                    return Ok(Response::SnippetGenerated(Curl::output(
+                        &req.build().unwrap(),
+                    )))
                 }
-                Err(e) => return Err(RequestError::Http(e)),
+                Type::None => {
+                    // output 指定が未指定 or 無効な場合
+                    let res = req.send().await;
+                    debug!("{:?}", res);
+                    match res {
+                        Ok(ok) => return Ok(Response::Dispatched(ok)),
+                        Err(e) if e.status().map_or(false, |s| s == StatusCode::UNAUTHORIZED) => {
+                            AccessToken::remove_cache(&opts.profile)
+                        }
+                        Err(e) => return Err(RequestError::Http(e)),
+                    }
+                }
             }
         }
+    }
+}
+
+pub enum Response {
+    Dispatched(ReqwestResult),
+    SnippetGenerated(String),
+}
+
+impl From<ReqwestResult> for Response {
+    fn from(r: ReqwestResult) -> Self {
+        Response::Dispatched(r)
     }
 }
 

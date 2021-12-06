@@ -5,7 +5,7 @@ use options::Opts;
 
 use crate::options;
 use crate::profile::{read_profiles, InvalidConfig as InvalidConfigError, Profile};
-use crate::request::{same_origin_redirect_policy, Dispatcher, RequestError};
+use crate::request::{same_origin_redirect_policy, Dispatcher, RequestError, Response};
 
 pub enum AppError {
     ProfileNotFound(String),
@@ -31,10 +31,12 @@ pub async fn execute(opts: Opts) -> Result<(), AppError> {
         .send(&opts, config)
         .await
         .map_err(AppError::RequestError)?;
-    let body = res
-        .text()
-        .await
-        .map_err(|e| AppError::RequestError(RequestError::Http(e)))?;
+
+    let body = match res {
+        Response::Dispatched(r) => r.text().await,
+        Response::SnippetGenerated(snippet) => Ok(snippet),
+    }
+    .map_err(|e| AppError::RequestError(RequestError::Http(e)))?;
     info!("{:}", body);
     Ok(())
 }

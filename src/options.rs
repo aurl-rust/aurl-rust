@@ -17,7 +17,7 @@ pub struct Opts {
     pub verbose: bool,
     #[clap(long, default_value = "")]
     pub auth_header_template: String,
-    #[clap(long)]
+    #[clap(long, default_value = "none")]
     pub output: Type,
     pub url: String,
 }

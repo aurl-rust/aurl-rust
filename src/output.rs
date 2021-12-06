@@ -5,12 +5,14 @@ use reqwest::Request;
 #[derive(Debug)]
 pub enum Type {
     Curl,
+    None,
 }
 
 impl FromStr for Type {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "curl" => Ok(Type::Curl),
+            "none" => Ok(Type::None),
             _ => Err(String::from("UnknownType")),
         }
     }
@@ -18,13 +20,13 @@ impl FromStr for Type {
 }
 
 pub trait Output {
-    fn output(self, req: &Request) -> String;
+    fn output(req: &Request) -> String;
 }
 
 pub struct Curl {}
 
 impl Output for Curl {
-    fn output(self, req: &Request) -> String {
+    fn output(req: &Request) -> String {
         // Desc: 取れる情報を回して curl 文字列を作る
         // -X METHOD
         // -H 可視なヘッダのみ叩き込む
@@ -65,8 +67,7 @@ mod test {
             .build()
             .unwrap();
 
-        let curl = Curl {};
-        let header_str = curl.output(&req);
+        let header_str = Curl::output(&req);
         assert_eq!(
             "curl -X GET -H \"key_001: value\" -H \"key_002: value\" https://example.com/test",
             header_str
@@ -82,13 +83,31 @@ mod test {
             .basic_auth("username", Some("password"))
             .build()
             .unwrap();
-        let curl = Curl {};
 
         // exercise
-        let header_str = curl.output(&req);
+        let header_str = Curl::output(&req);
 
         // verify
         let auth_value = base64::encode("username:password".as_bytes());
         assert_eq!(format!("curl -X GET -H \"key_001: value\" -H \"authorization: Basic {}\" https://example.com/test", auth_value), header_str);
     }
+
+    #[test]
+    fn export_post_method() {
+        // setup
+        let req = Client::new()
+            .request(reqwest::Method::POST, "https://example.com/test")
+            .basic_auth("username", Some("password"))
+            .build()
+            .unwrap();
+
+        // exercise
+        let curl = Curl::output(&req);
+
+        // verify
+        assert!(curl.contains("curl -X POST"));
+    }
+
+    // 検証できればしたい
+    // - Invalid な Header 取得時の unwrap で panic するテスト (Invalid な Header の作り方がわからない)
 }

@@ -1,4 +1,5 @@
 use rand::distributions::Alphanumeric;
+use std::fmt::Display;
 use std::fs;
 use std::fs::File;
 use std::io::{self, BufReader};
@@ -85,6 +86,12 @@ pub struct AccessToken {
     ttl: Option<u64>,
 }
 
+impl Display for AccessToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", serde_json::to_string(self).expect("can't parse AccessToken"))
+    }
+}
+
 impl AccessToken {
     // Load AccessToken from Cache
     pub fn load_cache(profile: &str) -> Option<AccessToken> {
@@ -118,7 +125,7 @@ impl AccessToken {
 
         // open cache file
         let path = AccessToken::cache_file(profile);
-        info!("{:?}", path.as_path());
+        info!("{}", path.as_path().display());
         let mut cache_file = File::create(path).unwrap();
 
         // Calculate TTL, if ttl is None
@@ -400,7 +407,7 @@ impl GrantType {
                 // 2. 認可リクエストのURLをブラウザで開く
                 let req = req.build().unwrap();
                 let url = req.url().as_str();
-                info!("{:?}", url);
+                info!("{}", url);
 
                 webbrowser::open(url).unwrap();
 
@@ -412,7 +419,7 @@ impl GrantType {
                     io::stdout().flush().unwrap();
                     match io::stdin().read_line(&mut auth_code) {
                         Ok(size) if size > 1 => break,
-                        Err(e) => warn!("{:?}", e),
+                        Err(e) => warn!("{}", e),
                         _ => (),
                     }
                 }

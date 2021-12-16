@@ -15,9 +15,17 @@ pub enum InvalidConfig {
 impl Display for InvalidConfig {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            InvalidConfig::MissingFields(s) => write!(f, "Missing Configuration Field. Check Your Profile Configuration: {}", s),
-            InvalidConfig::IniFileError(e) => write!(f, "Configuration Error. Check Your Profile Configuration: {}", e),
-            InvalidConfig::InvalidGrantType(s) => write!(f, "Invalid GrantType: {}", s)
+            InvalidConfig::MissingFields(s) => write!(
+                f,
+                "Missing Configuration Field. Check Your Profile Configuration: {}",
+                s
+            ),
+            InvalidConfig::IniFileError(e) => write!(
+                f,
+                "Configuration Error. Check Your Profile Configuration: {}",
+                e
+            ),
+            InvalidConfig::InvalidGrantType(s) => write!(f, "Invalid GrantType: {}", s),
         }
     }
 }

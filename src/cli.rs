@@ -20,7 +20,7 @@ impl Display for AppError {
         match self {
             AppError::ProfileNotFound(s) => write!(f, "Not Found Profile. {}", s),
             AppError::InvalidConfig(e) => write!(f, "Invalid Configuration. {}", e),
-            AppError::RequestError(e) => write!(f, "{}", e)
+            AppError::RequestError(e) => write!(f, "{}", e),
         }
     }
 }

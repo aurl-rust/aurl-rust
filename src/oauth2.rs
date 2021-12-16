@@ -88,7 +88,11 @@ pub struct AccessToken {
 
 impl Display for AccessToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", serde_json::to_string(self).expect("can't parse AccessToken"))
+        write!(
+            f,
+            "{}",
+            serde_json::to_string(self).expect("can't parse AccessToken")
+        )
     }
 }
 
@@ -325,6 +329,15 @@ mod test {
 pub enum AccessTokenError {
     InvalidConfig(String),
     HttpError(reqwest::Error),
+}
+
+impl Display for AccessTokenError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AccessTokenError::InvalidConfig(s) => write!(f, "Invalid Config: {}", s),
+            AccessTokenError::HttpError(e) => write!(f, "{}", e),
+        }
+    }
 }
 
 impl From<reqwest::Error> for AccessTokenError {

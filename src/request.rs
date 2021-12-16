@@ -23,9 +23,9 @@ pub enum RequestError {
 impl Display for RequestError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            RequestError::OAuth(e) => todo!(),
-            RequestError::Http(e) => todo!(),
-            RequestError::InvalidHeader(s) => todo!(),
+            RequestError::OAuth(e) => write!(f, "OAuth Process Error. {}", e),
+            RequestError::Http(e) => write!(f, "Http Process Error. {}", e),
+            RequestError::InvalidHeader(s) => write!(f, "Invalid Request Header. {}", s),
         }
     }
 }

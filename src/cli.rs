@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use log::{debug, info};
 use reqwest::Client;
 
@@ -11,6 +13,16 @@ pub enum AppError {
     ProfileNotFound(String),
     InvalidConfig(InvalidConfigError),
     RequestError(RequestError),
+}
+
+impl Display for AppError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AppError::ProfileNotFound(s) => write!(f, "Not Found Profile. {}", s),
+            AppError::InvalidConfig(e) => write!(f, "Invalid Configuration. {}", e),
+            AppError::RequestError(e) => write!(f, "{}", e),
+        }
+    }
 }
 
 pub async fn execute(opts: Opts) -> Result<(), AppError> {

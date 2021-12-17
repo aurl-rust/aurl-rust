@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
+use std::fmt::Display;
 use std::str::FromStr;
 
 use log::{debug, error, warn};
@@ -17,6 +18,16 @@ pub enum RequestError {
     OAuth(AccessTokenError),
     Http(reqwest::Error),
     InvalidHeader(String),
+}
+
+impl Display for RequestError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RequestError::OAuth(e) => write!(f, "OAuth Process Error. {}", e),
+            RequestError::Http(e) => write!(f, "Http Process Error. {}", e),
+            RequestError::InvalidHeader(s) => write!(f, "Invalid Request Header. {}", s),
+        }
+    }
 }
 
 pub fn same_origin_redirect_policy() -> Policy {
@@ -88,7 +99,7 @@ impl Dispatcher {
                     .await
                     .map_err(RequestError::OAuth)?,
             };
-            debug!("Get Token: {:?}", token);
+            debug!("Get Token: {}", token);
 
             // save cache with AccessToken
             token

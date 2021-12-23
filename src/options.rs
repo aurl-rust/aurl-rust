@@ -20,6 +20,8 @@ pub struct Opts {
     /// Output Option (case insensitive). curl: Output curl command snippet. none: Call URL with Got AccessToken.
     #[clap(long, default_value = "none")]
     pub output: Type,
+    #[clap(long, default_value = "30")]
+    pub timeout: u64,
     pub url: String,
 }
 

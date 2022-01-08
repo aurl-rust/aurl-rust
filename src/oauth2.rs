@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::{self, BufReader};
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 use log::{debug, info, warn};
 use rand::Rng;
@@ -369,6 +369,7 @@ impl GrantType {
     pub async fn get_access_token(
         &self,
         config: &OAuth2Config,
+        timeout: u64,
         http: &Client,
     ) -> Result<AccessToken, AccessTokenError> {
         let res = match self {
@@ -455,6 +456,7 @@ impl GrantType {
                     ])
             }
         }
+        .timeout(Duration::from_secs(timeout))
         .send()
         .await?;
         res.json().await.map_err(AccessTokenError::HttpError)

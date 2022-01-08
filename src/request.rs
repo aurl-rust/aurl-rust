@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::convert::TryInto;
 use std::fmt::Display;
 use std::str::FromStr;
+use std::time::Duration;
 
 use log::{debug, error, warn};
 use reqwest::header::{HeaderMap, CONTENT_TYPE, USER_AGENT};
@@ -95,7 +96,7 @@ impl Dispatcher {
                 Some(t) => t,
                 None => oauth2
                     .grant_type
-                    .get_access_token(oauth2, &self.client)
+                    .get_access_token(oauth2, opts.timeout, &self.client)
                     .await
                     .map_err(RequestError::OAuth)?,
             };
@@ -130,6 +131,9 @@ impl Dispatcher {
                 debug!("non option. use bearer");
                 req.bearer_auth(token.access_token)
             };
+
+            // set timeout
+            let req = req.timeout(Duration::from_secs(opts.timeout));
 
             debug!("{:?}", req);
             // output 指定があったら send 実行せずに return

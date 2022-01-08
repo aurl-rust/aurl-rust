@@ -14,7 +14,7 @@ T.B.D
 |parameter    | description | required | example |
 |-------------|-------------|---------|---------|
 |`[PROFILE]`  | Unique profile name | required |`[auth0]`|
-|`default_content_type` | Explicit Response Content Type | required | `application/json` |
+|`default_content_type` | Explicit Response Content Type | not required, but recommended to set | `application/json` |
 |`grant_type` | Specify Authorization grant flow. Allow grant flow are below. | required | `authorization_code` |
 |`client_id`  | Specify ClientId for Auth Server | required | `5D0AD236-796A-4098-8220-D04D8920F0CA` |
 |`client_secret` | Specify ClientSecret for Auth Server | required | `5C0927EC-C5B8-4237-A99A-EB71D6F41410`

@@ -140,7 +140,7 @@ impl Dispatcher {
             match &opts.output {
                 Type::Curl => {
                     return Ok(Response::SnippetGenerated(Curl::output(
-                        &req.build().unwrap(),
+                        &req.build().unwrap(),  // TODO: Refactoring
                     )))
                 }
                 Type::None => {

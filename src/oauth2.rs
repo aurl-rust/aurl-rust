@@ -105,7 +105,7 @@ impl AccessToken {
 
                 let now = SystemTime::now()
                     .duration_since(SystemTime::UNIX_EPOCH)
-                    .unwrap();
+                    .unwrap();  // TODO: Refactoring
 
                 match serde_json::from_reader::<BufReader<File>, AccessToken>(reader) {
                     // ttl 取得失敗したら 0 とする
@@ -159,12 +159,12 @@ impl AccessToken {
         // ttl = Epoch Sec + expires_in
         let now = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap();
+            .unwrap();  // TODO: Refactoring
         now.as_secs() + expires_in
     }
 
     fn basedir() -> PathBuf {
-        let mut home = dirs::home_dir().unwrap();
+        let mut home = dirs::home_dir().unwrap();   // TODO: Refactoring
         home.push(".aurl");
         home
     }
@@ -419,18 +419,18 @@ impl GrantType {
                 ]);
 
                 // 2. 認可リクエストのURLをブラウザで開く
-                let req = req.build().unwrap();
+                let req = req.build().unwrap(); // TODO: Refactoring
                 let url = req.url().as_str();
                 info!("{}", url);
 
-                webbrowser::open(url).unwrap();
+                webbrowser::open(url).unwrap(); // TODO: Refactoring
 
                 // 3. Dummy URL で停止するので URL から認可コードを取得して入力
                 let mut auth_code = String::new();
 
                 loop {
                     print!("\nEnter authorization code:");
-                    io::stdout().flush().unwrap();
+                    io::stdout().flush().unwrap();  // TODO: Refactoring
                     match io::stdin().read_line(&mut auth_code) {
                         Ok(size) if size > 1 => break,
                         Err(e) => warn!("{}", e),

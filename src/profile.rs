@@ -42,7 +42,7 @@ impl Profile {
     }
 
     fn basedir() -> PathBuf {
-        let mut home = dirs::home_dir().unwrap();
+        let mut home = dirs::home_dir().unwrap();   // TODO: Refactoring
         home.push(".aurl/");
         home
     }

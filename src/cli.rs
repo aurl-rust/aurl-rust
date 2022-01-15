@@ -36,7 +36,7 @@ pub async fn execute(opts: Opts) -> Result<(), AppError> {
     let client = Client::builder()
         .redirect(same_origin_redirect_policy())
         .build()
-        .unwrap();
+        .unwrap();  // TODO: Refactoring
     let dispatcher = Dispatcher { client };
 
     let res = dispatcher

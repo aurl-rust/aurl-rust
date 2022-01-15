@@ -33,5 +33,5 @@ pub fn init_logger(verbose: bool) -> Handle {
         .build(Root::builder().appender("stdout").build(level))
         .unwrap();
 
-    log4rs::init_config(config).unwrap()
+    log4rs::init_config(config).unwrap()    // TODO: Refactoring
 }

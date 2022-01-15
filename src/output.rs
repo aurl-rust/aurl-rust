@@ -41,7 +41,7 @@ impl Output for Curl {
             header_vec.push(format!(
                 "-H \"{}: {}\"",
                 String::from(k.as_str()),
-                String::from(v.to_str().unwrap())
+                String::from(v.to_str().unwrap())   // TODO: Refactoring
             ));
         }
         format!(

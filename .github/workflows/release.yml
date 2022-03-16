@@ -1,0 +1,123 @@
+name: Release
+on:
+  # Trigger the workflow on pushes to only the 'aurl-rust' branch (this avoids duplicate checks being run e.g. for dependabot pull requests)
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        target:
+          - x86_64-apple-darwin
+          - aarch64-apple-darwin
+        include:
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+
+    runs-on: ${{ matrix.os }}
+    outputs:
+      version: ${{ steps.properties.outputs.version }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          target: ${{ matrix.target }}
+          override: true
+      - uses: Swatinem/rust-cache@v1
+      - name: Build release version
+        run: cargo build --verbose --release --target=${{ matrix.target }}
+      - name: Export properties
+        id: properties
+        shell: bash
+        run: |
+          VERSION="$(cargo run --bin version)"
+          echo "::set-output name=version::$VERSION"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-${{ matrix.target }}-${{steps.properties.outputs.version}}
+          path: target/${{ matrix.target }}/release/aurl-rust
+
+  draft-release:
+    name: Release Draft
+    if: github.event_name != 'pull_request'
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      # Check out current repository
+      - name: Fetch Sources
+        uses: actions/checkout@v2.3.4
+
+      # Remove old release drafts by using the curl request for the available releases with draft flag
+      - name: Remove Old Release Drafts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/$GITHUB_REPOSITORY/releases \
+            | tr '\r\n' ' ' \
+            | jq '.[] | select(.draft == true) | .id' \
+            | xargs -I '{}' \
+          curl -X DELETE -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/$GITHUB_REPOSITORY/releases/{}
+      - name: Create a draft release
+        uses: actions/create-release@v1
+        id: createDraftRelease
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.build.outputs.version }}
+          release_name: ${{ needs.build.outputs.version }}
+          body: |
+            ## Changelog
+            - [ ]
+          draft: true
+          prerelease: false
+      - name: Save upload url of this draft release.
+        run: |
+          echo '${{ steps.createDraftRelease.outputs.upload_url }}' > release_upload_url.txt
+      - name: Upload `release_upload_url.txt`
+        uses: actions/upload-artifact@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: draft-release
+          path: release_upload_url.txt
+  attach-assets-to-release:
+    strategy:
+      matrix:
+        target:
+          - x86_64-apple-darwin
+          - aarch64-apple-darwin
+        include:
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+
+    needs: [build, draft-release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: draft-release
+      - id: upload-url
+        run: |
+          echo "::set-output name=url::$(cat draft-release/release_upload_url.txt)"
+      - uses: actions/download-artifact@v1
+        with:
+          name: build-${{ matrix.target }}-${{ needs.build.outputs.version }}
+          path: build/
+      - name: zip the artifact
+        run: zip -j build/aurl-rust.zip build/aurl-rust
+      - uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.upload-url.outputs.url }}
+          asset_path: ./build/aurl-rust.zip
+          asset_name: aurl-rust-${{ matrix.target }}-${{ needs.build.outputs.version }}.zip
+          asset_content_type: application/zip

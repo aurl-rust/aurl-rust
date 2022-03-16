@@ -3,10 +3,10 @@ use log::debug;
 use reqwest::header::{HeaderName, HeaderValue};
 use reqwest::RequestBuilder;
 
-use super::modifier::RequestModifier;
-use super::RequestError;
+use super::RequestModifier;
 use crate::oauth2::OAuth2Config;
 use crate::options::Opts;
+use crate::request::RequestError;
 use std::str::FromStr;
 
 pub struct CustomAuthHeader {

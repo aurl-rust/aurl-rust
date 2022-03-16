@@ -1,5 +1,5 @@
-use super::modifier::RequestModifier;
 use super::RequestError;
+use super::RequestModifier;
 use crate::oauth2::OAuth2Config;
 use crate::options::Opts;
 use reqwest::RequestBuilder;

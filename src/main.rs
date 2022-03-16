@@ -8,6 +8,7 @@ mod cli;
 mod logger;
 mod oauth2;
 mod options;
+mod output;
 mod profile;
 mod request;
 mod version;
@@ -18,15 +19,15 @@ async fn main() {
     logger::init_logger(opts.verbose);
     match cli::execute(opts).await {
         Err(AppError::RequestError(e)) => {
-            error!("RequestError: {:?}", e);
+            error!("RequestError: {}", e);
             abort();
         }
         Err(AppError::ProfileNotFound(profile)) => {
-            error!("Profile not found: {:?}", profile);
+            error!("Profile not found: {}", profile);
             abort();
         }
         Err(AppError::InvalidConfig(e)) => {
-            error!("Invalid .aurl/profiles: {:?}", e);
+            error!("Invalid .aurl/profiles: {}", e);
             abort();
         }
         Ok(_) => (),

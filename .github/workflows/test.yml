@@ -1,0 +1,41 @@
+name: Test
+
+on:
+  push
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    strategy:
+      matrix:
+        target:
+          - x86_64-apple-darwin
+          - x86_64-pc-windows-gnu
+          - aarch64-apple-darwin
+        include:
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-gnu
+            os: ubuntu-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        target: ${{ matrix.target }}
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: install cargo subcommands
+      run:  rustup component add rustfmt clippy
+    - name: Rust fmt and clippy
+      run: cargo fmt && cargo clippy -- -D warnings
+    - name: Run tests
+      run: cargo test --verbose

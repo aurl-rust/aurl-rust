@@ -1,6 +1,6 @@
 [package]
 name = "aurl-rust"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Sasaki Kazuhiro <sasaki.kazuhiro@classmethod.jp>"]
 edition = "2018"
 
@@ -10,16 +10,24 @@ repository = "https://github.com/cm-kazup0n/aurl-rust"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "version"
+path = "scripts/version.rs"
+
+[[bin]]
+name = "aurl-rust"
+path = "src/main.rs"
+
 [dependencies]
 
-reqwest = { version = "0.11.4", features = ["json"] }
+reqwest = { version = "0.11.7", features = ["json"] }
 tokio = { version = "1.9.0", features = ["full"] }
 serde = { version = "1.0.117", features = ["derive"] }
 serde_json = "1.0.66"
 async-trait = "0.1.51"
 tini = "1.1"
 dirs = "3.0.2"
-clap = "3.0.0-beta.2"
+clap = "3.0.0-beta.5"
 log4rs = {version = "1.0.0", features = ["pattern_encoder"]}
 log = "0.4.14"
 rand = "0.8.4"

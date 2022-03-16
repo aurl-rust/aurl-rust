@@ -1,15 +1,33 @@
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::path::PathBuf;
 
 use tini::Ini;
 
 use crate::oauth2::OAuth2Config;
 
-#[derive(Debug)]
 pub enum InvalidConfig {
     MissingFields(String),
     IniFileError(tini::Error),
     InvalidGrantType(String),
+}
+
+impl Display for InvalidConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            InvalidConfig::MissingFields(s) => write!(
+                f,
+                "Missing Configuration Field. Check Your Profile Configuration: {}",
+                s
+            ),
+            InvalidConfig::IniFileError(e) => write!(
+                f,
+                "Configuration Error. Check Your Profile Configuration: {}",
+                e
+            ),
+            InvalidConfig::InvalidGrantType(s) => write!(f, "Invalid GrantType: {}", s),
+        }
+    }
 }
 
 pub struct Profile {
@@ -55,6 +73,7 @@ pub fn read_profiles() -> Result<HashMap<String, OAuth2Config>, InvalidConfig> {
             redirect: section.get("redirect"),
             default_content_type: section.get("default_content_type"),
             default_user_agent: section.get("default_user_agent"),
+            default_auth_header_template: section.get("default_auth_header_template"),
         };
         profiles.insert(name.to_string(), profile);
     }

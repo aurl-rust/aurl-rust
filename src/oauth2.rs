@@ -1,10 +1,11 @@
 use rand::distributions::Alphanumeric;
+use std::fmt::Display;
 use std::fs;
 use std::fs::File;
 use std::io::{self, BufReader};
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 use log::{debug, info, warn};
 use rand::Rng;
@@ -30,6 +31,7 @@ pub struct OAuth2Config {
     pub redirect: Option<String>,
     pub default_content_type: Option<String>,
     pub default_user_agent: Option<String>,
+    pub default_auth_header_template: Option<String>,
 }
 
 impl OAuth2Config {
@@ -84,6 +86,16 @@ pub struct AccessToken {
     ttl: Option<u64>,
 }
 
+impl Display for AccessToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            serde_json::to_string(self).expect("can't parse AccessToken")
+        )
+    }
+}
+
 impl AccessToken {
     // Load AccessToken from Cache
     pub fn load_cache(profile: &str) -> Option<AccessToken> {
@@ -117,7 +129,7 @@ impl AccessToken {
 
         // open cache file
         let path = AccessToken::cache_file(profile);
-        info!("{:?}", path.as_path());
+        info!("{}", path.as_path().display());
         let mut cache_file = File::create(path).unwrap();
 
         // Calculate TTL, if ttl is None
@@ -319,6 +331,15 @@ pub enum AccessTokenError {
     HttpError(reqwest::Error),
 }
 
+impl Display for AccessTokenError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AccessTokenError::InvalidConfig(s) => write!(f, "Invalid Config: {}", s),
+            AccessTokenError::HttpError(e) => write!(f, "{}", e),
+        }
+    }
+}
+
 impl From<reqwest::Error> for AccessTokenError {
     fn from(e: reqwest::Error) -> Self {
         AccessTokenError::HttpError(e)
@@ -348,6 +369,7 @@ impl GrantType {
     pub async fn get_access_token(
         &self,
         config: &OAuth2Config,
+        timeout: u64,
         http: &Client,
     ) -> Result<AccessToken, AccessTokenError> {
         let res = match self {
@@ -399,7 +421,7 @@ impl GrantType {
                 // 2. 認可リクエストのURLをブラウザで開く
                 let req = req.build().unwrap();
                 let url = req.url().as_str();
-                info!("{:?}", url);
+                info!("{}", url);
 
                 webbrowser::open(url).unwrap();
 
@@ -411,7 +433,7 @@ impl GrantType {
                     io::stdout().flush().unwrap();
                     match io::stdin().read_line(&mut auth_code) {
                         Ok(size) if size > 1 => break,
-                        Err(e) => warn!("{:?}", e),
+                        Err(e) => warn!("{}", e),
                         _ => (),
                     }
                 }
@@ -434,6 +456,7 @@ impl GrantType {
                     ])
             }
         }
+        .timeout(Duration::from_secs(timeout))
         .send()
         .await?;
         res.json().await.map_err(AccessTokenError::HttpError)

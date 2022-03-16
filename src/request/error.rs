@@ -1,5 +1,4 @@
 use crate::oauth2::AccessTokenError;
-use reqwest;
 use std::fmt::Display;
 
 #[derive(Debug)]

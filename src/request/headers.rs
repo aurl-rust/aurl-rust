@@ -1,7 +1,7 @@
+use super::modifier::RequestModifier;
+use super::RequestError;
 use crate::oauth2::OAuth2Config;
 use crate::options::Opts;
-use crate::request::error::RequestError;
-use crate::request::modifier::RequestModifier;
 use reqwest::header::HeaderMap;
 use reqwest::RequestBuilder;
 use std::collections::HashMap;
@@ -17,9 +17,7 @@ impl Headers {
     }
 
     pub fn add_if_absent(&mut self, name: String, default_value: String) {
-        if !self.hm.contains_key(&name) {
-            self.hm.insert(name, default_value);
-        }
+        self.hm.entry(name).or_insert(default_value);
     }
 
     pub fn add_if_absent_opt(&mut self, name: String, default_value: Option<String>) {

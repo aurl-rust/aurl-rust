@@ -1,7 +1,7 @@
+use super::modifier::RequestModifier;
+use super::RequestError;
 use crate::oauth2::OAuth2Config;
 use crate::options::Opts;
-use crate::request::error::RequestError;
-use crate::request::modifier::RequestModifier;
 use reqwest::RequestBuilder;
 use std::time::Duration;
 

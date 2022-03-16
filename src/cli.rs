@@ -7,10 +7,7 @@ use options::Opts;
 
 use crate::options;
 use crate::profile::{read_profiles, InvalidConfig as InvalidConfigError, Profile};
-use crate::request::{
-    cors::same_origin_redirect_policy, dispatcher::Dispatcher, error::RequestError,
-    response::Response,
-};
+use crate::request::{same_origin_redirect_policy, Dispatcher, RequestError, Response};
 
 pub enum AppError {
     ProfileNotFound(String),

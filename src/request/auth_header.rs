@@ -3,10 +3,10 @@ use log::debug;
 use reqwest::header::{HeaderName, HeaderValue};
 use reqwest::RequestBuilder;
 
+use super::modifier::RequestModifier;
+use super::RequestError;
 use crate::oauth2::OAuth2Config;
 use crate::options::Opts;
-use crate::request::error::RequestError;
-use crate::request::modifier::RequestModifier;
 use std::str::FromStr;
 
 pub struct CustomAuthHeader {
@@ -15,7 +15,7 @@ pub struct CustomAuthHeader {
 
 impl CustomAuthHeader {
     pub fn from(token: AccessToken) -> CustomAuthHeader {
-        CustomAuthHeader { token: token }
+        CustomAuthHeader { token }
     }
 }
 
@@ -28,9 +28,8 @@ impl RequestModifier for CustomAuthHeader {
     ) -> Result<reqwest::RequestBuilder, RequestError> {
         if let Some(auth_custom_header) = &oauth2.default_auth_header_template {
             debug!("use custom auth header name({})", auth_custom_header);
-            let (header, value) =
-                split_custom_header(&auth_custom_header, &self.token.access_token)
-                    .expect("Invalid custom header configuration");
+            let (header, value) = split_custom_header(auth_custom_header, &self.token.access_token)
+                .expect("Invalid custom header configuration");
             Ok(request.header(
                 HeaderName::from_str(header).expect("Failed set header"),
                 HeaderValue::from_str(&value).expect("Failed set header value"),

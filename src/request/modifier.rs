@@ -2,10 +2,10 @@ use crate::oauth2::{AccessToken, OAuth2Config};
 use crate::options::Opts;
 use crate::request::error::RequestError;
 
-use crate::request::auth_header::CustomAuthHeader;
-use crate::request::custom_headers::CustomHeaders;
-use crate::request::body::Body;
-use crate::request::timeout::Timeout;
+use super::auth_header::CustomAuthHeader;
+use super::body::Body;
+use super::custom_headers::CustomHeaders;
+use super::timeout::Timeout;
 use reqwest::RequestBuilder;
 
 pub trait RequestModifier {
@@ -31,4 +31,4 @@ pub fn timeout() -> impl RequestModifier {
 
 pub fn body() -> impl RequestModifier {
     Body::new()
-} 
+}

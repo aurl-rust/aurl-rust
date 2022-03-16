@@ -3,9 +3,9 @@ use reqwest::{Client, StatusCode};
 
 use crate::oauth2::{AccessToken, OAuth2Config};
 use crate::options::Opts;
-use crate::output::{Curl, Type, Output};
+use crate::output::{Curl, Output, Type};
 use crate::request::error::RequestError;
-use crate::request::modifier::{auth_header, custom_headers, timeout, body, RequestModifier};
+use crate::request::modifier::{auth_header, body, custom_headers, timeout, RequestModifier};
 use crate::request::response::Response;
 pub struct Dispatcher {
     pub client: Client,

@@ -5,7 +5,7 @@ use crate::oauth2::{AccessToken, OAuth2Config};
 use crate::options::Opts;
 use crate::output::{Curl, Type, Output};
 use crate::request::error::RequestError;
-use crate::request::modifier::{auth_header, custom_headers, timeout, RequestModifier};
+use crate::request::modifier::{auth_header, custom_headers, timeout, body, RequestModifier};
 use crate::request::response::Response;
 pub struct Dispatcher {
     pub client: Client,
@@ -33,6 +33,7 @@ impl Dispatcher {
             req = custom_headers().modify(req, opts, oauth2)?;
             req = auth_header(token).modify(req, opts, oauth2)?;
             req = timeout().modify(req, opts, oauth2)?;
+            req = body().modify(req, opts, oauth2)?;
 
             // output 指定があったら send 実行せずに return
             match &opts.output {

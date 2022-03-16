@@ -23,6 +23,8 @@ pub struct Opts {
     #[clap(long, default_value = "30")]
     pub timeout: u64,
     pub url: String,
+    #[clap(short = 'd', long)]
+    pub data: Option<String>,
 }
 
 pub fn parse_opts() -> Opts {

@@ -4,6 +4,7 @@ use crate::request::error::RequestError;
 
 use crate::request::auth_header::CustomAuthHeader;
 use crate::request::custom_headers::CustomHeaders;
+use crate::request::body::Body;
 use crate::request::timeout::Timeout;
 use reqwest::RequestBuilder;
 
@@ -27,3 +28,7 @@ pub fn auth_header(token: AccessToken) -> impl RequestModifier {
 pub fn timeout() -> impl RequestModifier {
     Timeout::new()
 }
+
+pub fn body() -> impl RequestModifier {
+    Body::new()
+} 

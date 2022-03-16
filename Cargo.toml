@@ -1,6 +1,6 @@
 [package]
 name = "aurl-rust"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Sasaki Kazuhiro <sasaki.kazuhiro@classmethod.jp>"]
 edition = "2018"
 

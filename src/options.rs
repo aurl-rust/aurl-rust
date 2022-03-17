@@ -1,9 +1,9 @@
 use crate::output::Type;
-use clap::{AppSettings, Parser};
+use clap::Parser;
 use reqwest::Method;
 
 #[derive(Parser, Debug)]
-#[clap(setting = AppSettings::ArgRequiredElseHelp)]
+#[clap(arg_required_else_help=true)]
 pub struct Opts {
     #[clap(short, long, default_value = "default")]
     pub profile: String,

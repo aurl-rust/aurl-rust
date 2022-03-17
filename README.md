@@ -5,9 +5,58 @@ aurl-rust
 
 *aurl-rust* is yet another implementation of [aurl](https://github.com/classmethod/aurl)
 
-## Option
+## Install
 
-T.B.D
+Get the binary from [Releases](https://github.com/cm-kazup0n/aurl-rust/releases).
+
+or 
+
+```
+$ cargo install --git https://github.com/cm-kazup0n/aurl-rust.git --locked
+```
+
+installing with `--locked` is recommended.
+
+## Usage
+
+```
+aurl-rust 
+
+USAGE:
+    aurl-rust [OPTIONS] <URL>
+
+ARGS:
+    <URL>    
+
+OPTIONS:
+        --auth-header-template <AUTH_HEADER_TEMPLATE>
+            [default: ]
+
+    -d, --data <DATA>
+            
+
+    -h, --help
+            Print help information
+
+    -H, --header <HEADER>...
+            
+
+        --output <OUTPUT>
+            Output Option (case insensitive). curl: Output curl command snippet. none: Call URL with
+            Got AccessToken [default: none]
+
+    -p, --profile <PROFILE>
+            [default: default]
+
+        --timeout <TIMEOUT>
+            [default: 30]
+
+    -v, --verbose
+            A level of verbosity, and can be used multiple times
+
+    -X, --request <REQUEST>
+            [default: GET]
+```
 
 ## Profile
 

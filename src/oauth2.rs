@@ -129,7 +129,6 @@ impl AccessToken {
 
         // open cache file
         let path = AccessToken::cache_file(profile);
-        info!("{}", path.as_path().display());
         let mut cache_file = File::create(path).unwrap();
 
         // Calculate TTL, if ttl is None

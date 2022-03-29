@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - update toolchain and depencency crates
     - rust editons to 2021
     - toolchains to 1.59.0
+- Delete verbose log / fix log levels of some messages.
 
 ## [0.1.1]
 

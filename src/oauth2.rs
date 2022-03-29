@@ -117,7 +117,7 @@ impl AccessToken {
                 }
             }
             Err(_) => {
-                info!("can not find cache file: {}", &profile);
+                warn!("can not find cache file: {}", &profile);
                 None
             }
         }
@@ -148,7 +148,7 @@ impl AccessToken {
     // Remove cache file
     pub fn remove_cache(profile: &str) {
         fs::remove_file(AccessToken::cache_file(profile).as_path()).unwrap_or_else(|_| {
-            info!("can not remove cache");
+            warn!("can not remove cache");
         })
     }
 

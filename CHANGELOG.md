@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+
+## [0.1.2]
+
+### Changed
+
+- update toolchain and depencency crates
+    - rust editons to 2021
+    - toolchains to 1.59.0
+- Delete verbose log / fix log levels of some messages.
+
 ## [0.1.1]
 
 ### Added

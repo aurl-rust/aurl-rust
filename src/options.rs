@@ -3,7 +3,7 @@ use clap::Parser;
 use reqwest::Method;
 
 #[derive(Parser, Debug)]
-#[clap(arg_required_else_help=true)]
+#[clap(arg_required_else_help = true)]
 pub struct Opts {
     #[clap(short, long, default_value = "default")]
     pub profile: String,

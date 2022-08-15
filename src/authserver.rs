@@ -57,7 +57,7 @@ impl AuthCodeServer {
                             let stream = stream.get_mut();
                             writeln!(stream, "HTTP/1.1 200 OK").unwrap();
                             writeln!(stream, "Content-Type: text/plain; charset=UTF-8").unwrap();
-                            writeln!(stream, "auth_code={}", code.to_string()).unwrap();
+                            writeln!(stream, "auth_code={}", code).unwrap();
 
                             debug!("get auth code: {}", code);
                             return Ok(code.to_string());

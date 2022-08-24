@@ -5,9 +5,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [Unreleased]
 
+## [0.1.3]
+
 ### Changed
 
- toolchains to 1.60.0
+- Add LocalServer for getting Authorization Code automaticaly
+- Remove redandunt Test Code
+- toolchains to 1.60.0
 
 ## [0.1.2]
 

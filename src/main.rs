@@ -4,6 +4,7 @@ use log::error;
 
 use crate::cli::AppError;
 
+mod authserver;
 mod cli;
 mod logger;
 mod oauth2;

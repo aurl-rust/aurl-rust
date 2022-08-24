@@ -2,7 +2,7 @@ use rand::distributions::Alphanumeric;
 use std::fmt::Display;
 use std::fs;
 use std::fs::File;
-use std::io::{self, BufReader};
+use std::io::BufReader;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
@@ -13,6 +13,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+use crate::authserver::AuthCodeServer;
 use crate::oauth2::GrantType::{AuthorizationCode, ClientCredentials, Password};
 use crate::profile::InvalidConfig;
 use crate::version;
@@ -319,8 +320,7 @@ mod test {
     #[test]
     #[should_panic]
     fn long_verifier_ng() {
-        GrantType::pkce_challenge(PkceMethod::S256,
-            "129aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        GrantType::pkce_challenge(PkceMethod::S256, "a".repeat(129).as_str());
     }
 }
 
@@ -424,18 +424,12 @@ impl GrantType {
 
                 webbrowser::open(url).unwrap();
 
-                // 3. Dummy URL で停止するので URL から認可コードを取得して入力
-                let mut auth_code = String::new();
+                // 3. 認可コードを取得する
+                // 指定ポートで Callback 待ち構える
+                // TODO: port を可変にする
+                let server = AuthCodeServer::new(8080);
+                let auth_code = server.receive_auth_code().unwrap();
 
-                loop {
-                    print!("\nEnter authorization code:");
-                    io::stdout().flush().unwrap();
-                    match io::stdin().read_line(&mut auth_code) {
-                        Ok(size) if size > 1 => break,
-                        Err(e) => warn!("{}", e),
-                        _ => (),
-                    }
-                }
                 // 4. 認可コードをトークンエンドポイントへ POST. AccessToken を取得
                 http.post(config.auth_server_token_endpoint()?)
                     .basic_auth(config.client_id()?, config.client_secret.clone())

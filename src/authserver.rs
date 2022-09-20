@@ -1,6 +1,6 @@
-use log::{error, debug};
-use std::io::{self, BufRead};
+use log::{debug, error};
 use std::io::Write;
+use std::io::{self, BufRead};
 use std::net::TcpListener;
 
 mod path_util {
@@ -56,12 +56,13 @@ impl AuthCodeServer {
                         Ok(code) => {
                             let stream = stream.get_mut();
                             writeln!(stream, "HTTP/1.1 200 OK").unwrap();
-                            writeln!(stream, "Content-Type: text/plain; charset=UTF-8").unwrap();
+                            writeln!(stream, "Content-Type: text/plain; charset=UTF-8\r\n")
+                                .unwrap();
                             writeln!(stream, "auth_code={}", code).unwrap();
 
                             debug!("get auth code: {}", code);
                             return Ok(code.to_string());
-                        },
+                        }
                         Err(err) => error!("{}", err),
                     }
                 }

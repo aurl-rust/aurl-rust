@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [Unreleased]
 
+- Fix authserver HTTP Response
+
 ## [0.1.3]
 
 ### Changed

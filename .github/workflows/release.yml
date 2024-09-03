@@ -101,13 +101,13 @@ jobs:
     needs: [build, draft-release]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: draft-release
       - id: upload-url
         run: |
           echo "::set-output name=url::$(cat draft-release/release_upload_url.txt)"
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: build-${{ matrix.target }}-${{ needs.build.outputs.version }}
           path: build/

@@ -11,13 +11,22 @@ mod path_util {
         pub static ref PATH_REGEX: Regex = Regex::new(".*?code=(?P<code>.+)&").unwrap();
     }
 
-    pub fn split_auth_code(first_line: &str) -> Result<&str, &str> {
+    pub fn split_auth_code<'a>(
+        first_line: &'a str,
+        expected_path: &str,
+    ) -> Result<&'a str, &'static str> {
         let mut params = first_line.split_whitespace();
         let method = params.next();
         let path = params.next();
 
         match (method, path) {
             (Some("GET"), Some(path)) => {
+                // Validate the path portion (before ?) matches expected callback path
+                let path_only = path.split('?').next().unwrap_or(path);
+                if path_only != expected_path {
+                    return Err("Unexpected callback path");
+                }
+
                 println!("path: {}", path);
 
                 if let Some(code) = PATH_REGEX.captures(path) {
@@ -33,12 +42,13 @@ mod path_util {
 }
 
 pub struct AuthCodeServer {
-    port: i32,
+    port: u16,
+    path: String,
 }
 
 impl AuthCodeServer {
-    pub fn new(port: i32) -> AuthCodeServer {
-        AuthCodeServer { port }
+    pub fn new(port: u16, path: String) -> AuthCodeServer {
+        AuthCodeServer { port, path }
     }
 
     pub fn receive_auth_code(self) -> Result<String, String> {
@@ -52,7 +62,7 @@ impl AuthCodeServer {
                         error!("{}", error);
                     }
 
-                    match path_util::split_auth_code(first_line.as_str()) {
+                    match path_util::split_auth_code(first_line.as_str(), &self.path) {
                         Ok(code) => {
                             let stream = stream.get_mut();
                             writeln!(stream, "HTTP/1.1 200 OK").unwrap();
@@ -90,5 +100,19 @@ mod test {
             }
             None => panic!("test failed"),
         }
+    }
+
+    #[test]
+    fn test_split_auth_code_valid_path() {
+        let first_line = "GET /callback?code=ZZZZ-XXXX-CCCC&state=hogehoge HTTP/1.1";
+        let result = path_util::split_auth_code(first_line, "/callback");
+        assert_eq!(result, Ok("ZZZZ-XXXX-CCCC"));
+    }
+
+    #[test]
+    fn test_split_auth_code_unexpected_path() {
+        let first_line = "GET /other?code=ZZZZ-XXXX-CCCC&state=hogehoge HTTP/1.1";
+        let result = path_util::split_auth_code(first_line, "/callback");
+        assert!(result.is_err());
     }
 }

@@ -96,3 +96,7 @@ Release workflow (`.github/workflows/release.yml`) triggers on main branch pushe
 ## Rust Version
 
 The project specifies Rust `1.60.0` in `rust-toolchain`. Ensure the installed toolchain matches.
+
+## GitHub Communication Language
+
+When creating Pull Requests or filing Issues on GitHub, always write the title, description, and all comments in **Japanese**.

@@ -370,7 +370,7 @@ impl GrantType {
         config: &OAuth2Config,
         timeout: u64,
         http: &Client,
-        callback_port: u16,
+        callback_port: Option<u16>,
     ) -> Result<AccessToken, AccessTokenError> {
         let res = match self {
             GrantType::Password => http
@@ -429,11 +429,7 @@ impl GrantType {
                 // redirect URL からポートとパスを抽出し、Callback を待ち受ける
                 let redirect_url = config.redirect()?;
                 let (parsed_port, path) = parse_callback_addr(&redirect_url);
-                let port = if callback_port > 0 {
-                    callback_port
-                } else {
-                    parsed_port
-                };
+                let port = callback_port.unwrap_or(parsed_port);
                 let server = AuthCodeServer::new(port, path);
                 let auth_code = server.receive_auth_code().unwrap();
 
@@ -505,7 +501,7 @@ impl PkceMethod {
 // Extract (port, path) from a redirect URL like "http://localhost:8080/callback".
 // Falls back to port 8080 and path "/" if parsing fails.
 fn parse_callback_addr(redirect_url: &str) -> (u16, String) {
-    let default_port: u16 = 8080;
+    let default_port: u16 = 80;
     let default_path = "/".to_string();
 
     let after_scheme = redirect_url

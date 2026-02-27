@@ -370,6 +370,7 @@ impl GrantType {
         config: &OAuth2Config,
         timeout: u64,
         http: &Client,
+        callback_port: Option<u16>,
     ) -> Result<AccessToken, AccessTokenError> {
         let res = match self {
             GrantType::Password => http
@@ -425,9 +426,11 @@ impl GrantType {
                 webbrowser::open(url).unwrap();
 
                 // 3. 認可コードを取得する
-                // 指定ポートで Callback 待ち構える
-                // TODO: port を可変にする
-                let server = AuthCodeServer::new(8080);
+                // redirect URL からポートとパスを抽出し、Callback を待ち受ける
+                let redirect_url = config.redirect()?;
+                let (parsed_port, path) = parse_callback_addr(&redirect_url);
+                let port = callback_port.unwrap_or(parsed_port);
+                let server = AuthCodeServer::new(port, path);
                 let auth_code = server.receive_auth_code().unwrap();
 
                 // 4. 認可コードをトークンエンドポイントへ POST. AccessToken を取得
@@ -493,6 +496,37 @@ impl PkceMethod {
             .collect();
         s
     }
+}
+
+// Extract (port, path) from a redirect URL like "http://localhost:8080/callback".
+// Falls back to port 8080 and path "/" if parsing fails.
+fn parse_callback_addr(redirect_url: &str) -> (u16, String) {
+    let default_port: u16 = 80;
+    let default_path = "/".to_string();
+
+    let after_scheme = redirect_url
+        .strip_prefix("http://")
+        .or_else(|| redirect_url.strip_prefix("https://"))
+        .unwrap_or(redirect_url);
+
+    let (host_port, path) = if let Some(slash_pos) = after_scheme.find('/') {
+        (
+            &after_scheme[..slash_pos],
+            after_scheme[slash_pos..].to_string(),
+        )
+    } else {
+        (after_scheme, default_path)
+    };
+
+    let port = if let Some(colon_pos) = host_port.rfind(':') {
+        host_port[colon_pos + 1..]
+            .parse::<u16>()
+            .unwrap_or(default_port)
+    } else {
+        default_port
+    };
+
+    (port, path)
 }
 
 // Generate Random State String

@@ -25,6 +25,9 @@ pub struct Opts {
     pub url: String,
     #[clap(short = 'd', long)]
     pub data: Option<String>,
+    /// Override the callback server port for authorization_code grant (default: parsed from redirect URL, fallback 80)
+    #[clap(long)]
+    pub callback_port: Option<u16>,
 }
 
 pub fn parse_opts() -> Opts {

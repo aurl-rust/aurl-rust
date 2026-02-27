@@ -18,7 +18,7 @@ impl Dispatcher {
                 Some(t) => t,
                 None => oauth2
                     .grant_type
-                    .get_access_token(oauth2, opts.timeout, &self.client)
+                    .get_access_token(oauth2, opts.timeout, &self.client, opts.callback_port)
                     .await
                     .map_err(RequestError::OAuth)?,
             };

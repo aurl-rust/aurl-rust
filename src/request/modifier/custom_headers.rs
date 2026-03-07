@@ -19,7 +19,7 @@ impl RequestModifier for CustomHeaders {
     ) -> Result<RequestBuilder, RequestError> {
         let mut headers = Headers::with_capacity(opts.header.len());
         for h in opts.header.clone() {
-            let kv = h.split(',').collect::<Vec<_>>();
+            let kv = h.splitn(2, ':').collect::<Vec<_>>();
             if kv.len() == 2 {
                 if let (Some(k), Some(v)) = (kv.get(0), kv.get(1)) {
                     headers.add((*k).to_string(), (*v).to_string());

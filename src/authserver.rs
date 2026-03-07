@@ -8,7 +8,7 @@ mod path_util {
     use regex::Regex;
 
     lazy_static! {
-        pub static ref PATH_REGEX: Regex = Regex::new(".*?code=(?P<code>.+)&").unwrap();
+        pub static ref PATH_REGEX: Regex = Regex::new(".*?code=(?P<code>[^& ]+)").unwrap();
     }
 
     pub fn split_auth_code(first_line: &str) -> Result<&str, &str> {
@@ -89,6 +89,17 @@ mod test {
                 assert_eq!(code, "ZZZZ-XXXX-CCCC")
             }
             None => panic!("test failed"),
+        }
+    }
+
+    #[test]
+    fn test_regex_path_code_at_end() {
+        match path_util::PATH_REGEX.captures("?state=hogehoge&code=ZZZZ-XXXX-CCCC") {
+            Some(path) => {
+                let code = path.name("code").unwrap().as_str();
+                assert_eq!(code, "ZZZZ-XXXX-CCCC")
+            }
+            None => panic!("test failed: code at end of query string not matched"),
         }
     }
 }

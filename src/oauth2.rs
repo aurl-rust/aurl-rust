@@ -495,11 +495,9 @@ impl PkceMethod {
     }
 }
 
-// Generate Random State String
+// Generate Random State String (128-bit entropy, RFC 6749 compliant)
 fn random() -> String {
     let mut rng = rand::thread_rng();
-    let val: i32 = rng.gen();
-
-    // TODO: なんかアレなのでどうにかする
-    base64::encode(&val.to_be_bytes())
+    let val: [u8; 16] = rng.gen();
+    base64::encode(&val)
 }

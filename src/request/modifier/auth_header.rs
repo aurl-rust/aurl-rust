@@ -44,7 +44,7 @@ fn split_custom_header<'a>(
     template: &'a str,
     access_token: &'a str,
 ) -> Result<(&'a str, String), AccessTokenError> {
-    let split: Vec<&str> = template.split('=').collect();
+    let split: Vec<&str> = template.splitn(2, '=').collect();
     if split.len() != 2 {
         debug!("Failed parse custom_header_template, {}", template);
         Err(AccessTokenError::InvalidConfig(
@@ -55,10 +55,7 @@ fn split_custom_header<'a>(
             "can't find '$token' placeholder".to_string(),
         ))
     } else {
-        let value = split[1]
-            .trim()
-            .to_lowercase()
-            .replace("$token", access_token);
+        let value = split[1].trim().replace("$token", access_token);
         Ok((split[0], value))
     }
 }

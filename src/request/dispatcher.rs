@@ -13,6 +13,8 @@ pub struct Dispatcher {
 
 impl Dispatcher {
     pub async fn send(&self, opts: &Opts, oauth2: &OAuth2Config) -> Result<Response, RequestError> {
+        const MAX_RETRIES: u8 = 2;
+        let mut retries = 0u8;
         loop {
             let mut token = match AccessToken::load_cache(&opts.profile) {
                 Some(t) => t,
@@ -49,6 +51,10 @@ impl Dispatcher {
                     match res {
                         Err(e) if e.status() == Some(StatusCode::UNAUTHORIZED) => {
                             AccessToken::remove_cache(&opts.profile);
+                            retries += 1;
+                            if retries >= MAX_RETRIES {
+                                return Err(RequestError::Http(e));
+                            }
                         }
                         Err(e) => return Err(RequestError::Http(e)),
                         Ok(ok) => return Ok(Response::Dispatched(ok)),
